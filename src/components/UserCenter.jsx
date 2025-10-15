@@ -1,0 +1,176 @@
+import React from 'react';
+
+const UserCenter = () => {
+  // 历史记录数据
+  const historyItems = [
+    { title: "八字分析", date: "2025年10月1日" },
+    { title: "紫薇斗数", date: "2025年9月28日" },
+    { title: "梅花易数", date: "2025年9月25日" }
+  ];
+  
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      {/* 用户头部区域 */}
+      <div className="flex items-center space-x-4">
+        {/* 用户图标 */}
+        <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+            />
+          </svg>
+        </div>
+        {/* 标题区域 */}
+        <div>
+          <h2 className="text-xl font-semibold">用户中心</h2>
+          <p className="text-gray-500 text-sm">探索国学智慧，掌握人生命理</p>
+        </div>
+      </div>
+      
+      {/* 统计卡片区 */}
+      <div className="flex flex-wrap gap-4 mt-6">
+        {/* 咨询次数卡片 */}
+        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
+          <div className="text-blue-500 mb-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 mx-auto"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="text-xl font-semibold">24</div>
+          <div className="text-gray-500 text-sm">咨询次数</div>
+        </div>
+        
+        {/* 学习进度卡片 */}
+        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
+          <div className="text-blue-500 mb-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 mx-auto"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 6.75h13.5m-13.5 3h13.5m-13.5 3h13.5m-13.5 3h13.5"
+              />
+            </svg>
+          </div>
+          <div className="text-xl font-semibold">68%</div>
+          <div className="text-gray-500 text-sm">学习详细资料</div>
+        </div>
+        
+        {/* 勋章卡片 */}
+        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
+          <div className="text-blue-500 mb-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 mx-auto"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="text-xl font-semibold">12</div>
+          <div className="text-gray-500 text-sm">获得勋章</div>
+        </div>
+        
+        {/* 会员等级卡片 */}
+        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
+          <div className="text-blue-500 mb-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 mx-auto"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 19.5a2.25 2.25 0 01-1.5-2.18l.007-1.03c0-1.135.845-2.098 1.976-2.188a48.04 48.04 0 0111.186 0c1.131.09 1.976 1.053 1.976 2.188l.007 1.03a2.25 2.25 0 01-1.5 2.18m-2.25-6.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm13.5 2.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+              />
+            </svg>
+          </div>
+          <div className="text-xl font-semibold">贵宾</div>
+          <div className="text-gray-500 text-sm">会员等级</div>
+        </div>
+      </div>
+      
+      {/* 历史记录区域 */}
+      <div className="mt-6 bg-white rounded-lg p-4 border border-gray-100">
+        {/* 历史记录标题 */}
+        <div className="flex items-center space-x-2 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-5 h-5 text-gray-500"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5 0h.75m0 0h.75m0 0h.75m1.5 0h.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <h3 className="font-semibold">历史记录</h3>
+        </div>
+        
+        {/* 历史记录列表 */}
+        <div>
+          {historyItems.map((item, index) => (
+            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
+              <div>
+                <h3 className="font-medium">{item.title}</h3>
+                <p className="text-gray-500 text-sm">{item.date}</p>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <button className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition">查看</button>
+                <span className="bg-blue-100 text-blue-500 px-2 py-0.5 rounded text-xs">已完成</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UserCenter;
