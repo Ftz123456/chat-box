@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
     }
 
-    const apiKey = process.env.DASHSCOPE_API_KEY || 'sk-7146f670a47345dfbacf59911d7c39d0';
-    const appId = process.env.DASHSCOPE_APP_ID || 'ef0763ab3d264fd785b4640e60cae96d';
+    const apiKey = 'sk-58c6269c6af3447b9e5b86c585ee50f8';
+    const appId =  'ede4f02d9fab4c73872c6d025d0ebe33';
     
     // Get the last user message
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();

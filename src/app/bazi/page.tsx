@@ -25,7 +25,7 @@ function BaziMain() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 发送消息逻辑保持不变
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -36,57 +36,30 @@ function BaziMain() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/zhongyiChat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, type: chatType }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: newMessages }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
-
-      const decoder = new TextDecoder();
-      let assistantContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') {
-              setIsLoading(false);
-              return;
-            }
-
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                assistantContent += parsed.content;
-                setMessages(prev => {
-                  const updated = [...prev];
-                  const lastIndex = updated.length - 1;
-                  
-                  if (updated[lastIndex]?.role === 'assistant') {
-                    updated[lastIndex] = { role: 'assistant', content: assistantContent };
-                  } else {
-                    updated.push({ role: 'assistant', content: assistantContent });
-                  }
-                  return updated;
-                });
-              }
-            } catch (e) {
-              console.warn('Failed to parse SSE data:', data);
-            }
-          }
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
-      reader.releaseLock();
+
+      const responseData = await response.json();
+      
+      if (responseData.content) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: responseData.content
+        }]);
+      } else {
+        throw new Error('No content in response');
+      }
+      
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, {

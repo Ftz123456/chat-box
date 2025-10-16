@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "易旅AI - 智能占卜助手",
+  title: "易璇AI - 智能占卜助手",
   description: "基于传统易学理论的AI智能占卜分析平台",
 };
 
