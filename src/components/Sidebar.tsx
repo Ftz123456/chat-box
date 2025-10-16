@@ -39,7 +39,6 @@ export default function Sidebar() {
     { icon: '🚀', label: '专项驱动', path: '/kaoyan' },
     { icon: '👁️', label: '易学理论', path: '/theory' },
     { icon: '🛍️', label: '开运物品', path: '/products' },
-    { icon: '🛍️', label: 'ceshi', path: '/marxist-analysis' },
     { icon: '💬', label: '交流反馈', path: '/feedback' },
     { icon: '👤', label: '账户中心', path: '/account' }
   ];

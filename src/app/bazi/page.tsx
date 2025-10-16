@@ -15,9 +15,7 @@ function BaziMain() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const chatType = searchParams.get('type') || 'digital';
+
   const contentWrapperRef = useRef<HTMLDivElement>(null);
 
   // 自动滚动到最新消息
@@ -239,7 +237,7 @@ function BaziPrompt() {
         <ol className="space-y-4 text-gray-700">
           <li className="flex items-start">
             <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">①</span>
-            <span>提供生辰信息(年月日时+出生地，例如1999年6月28日11时33分四川省成都市)</span>
+            <span>提供生辰信息(年月日时+出生地+性别，例如1999年6月28日11时33分四川省成都市 男)</span>
           </li>
           <li className="flex items-start">
             <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">②</span>
@@ -291,6 +289,104 @@ function BaziPrompt() {
 function Loading() {
   return <div>Loading search parameters...</div>;
 }
+function formatCompleteZiweiChart(data: any) {
+   
+    // 基本信息部分
+    const basicInfo = `【命盘基本信息】
+性别：${data.gender}
+出生日期：公历${data.solarDate}（农历${data.lunarDate}）
+八字：${data.chineseDate}
+出生时间：${data.time}（${data.timeRange}）
+星座：${data.sign}，生肖：${data.zodiac}
+命主：${data.soul}，身主：${data.body}
+五行局：${data.fiveElementsClass}
+命宫地支：${data.earthlyBranchOfSoulPalace}，身宫地支：${data.earthlyBranchOfBodyPalace}
+
+`;
+
+    // 处理十二宫位
+    const palaceDescriptions = [];
+    
+    for (const palace of data.palaces) {
+        // 宫位基本信息
+        let desc = `【${palace.name}宫】${palace.heavenlyStem}${palace.earthlyBranch}`;
+        
+        // 特殊标记
+        const specialMarks = [];
+        if (palace.isBodyPalace) {
+            specialMarks.push("身宫");
+        }
+        if (palace.isOriginalPalace) {
+            specialMarks.push("来因宫");
+        }
+        if (specialMarks.length > 0) {
+            desc += `〔${specialMarks.join('、')}〕`;
+        }
+        
+        // 主星
+        if (palace.majorStars && palace.majorStars.length > 0) {
+            const majorStarsDesc = palace.majorStars.map((star: any) => {
+                let starDesc = star.name;
+                if (star.brightness) {
+                    starDesc += `(${star.brightness})`;
+                }
+                if (star.mutagen) {
+                    starDesc += `〔${star.mutagen}〕`;
+                }
+                return starDesc;
+            });
+            desc += `\n  主星：${majorStarsDesc.join('、')}`;
+        }
+        
+        // 辅星
+        if (palace.minorStars && palace.minorStars.length > 0) {
+            const minorStarsDesc = palace.minorStars.map((star: any) => {
+                let starDesc = star.name;
+                if (star.brightness) {
+                    starDesc += `(${star.brightness})`;
+                }
+                if (star.mutagen) {
+                    starDesc += `〔${star.mutagen}〕`;
+                }
+                return starDesc;
+            });
+            desc += `\n  辅星：${minorStarsDesc.join('、')}`;
+        }
+        
+        // 杂曜
+        if (palace.adjectiveStars && palace.adjectiveStars.length > 0) {
+            const adjStarsNames = palace.adjectiveStars.map((star: any) => star.name);
+            desc += `\n  杂曜：${adjStarsNames.join('、')}`;
+        }
+        
+        // 长生十二神
+        desc += `\n  长生十二神：${palace.changsheng12}`;
+        
+        // 博士十二神
+        desc += `，博士十二神：${palace.boshi12}`;
+        
+        // 流年神煞
+        desc += `\n  将前十二神：${palace.jiangqian12}，岁前十二神：${palace.suiqian12}`;
+        
+        // 大限
+        const decadal = palace.decadal;
+        desc += `\n  大限：${decadal.range[0]}-${decadal.range[1]}岁（${decadal.heavenlyStem}${decadal.earthlyBranch}）`;
+        
+        palaceDescriptions.push(desc);
+    }
+    
+    // 组合完整描述
+    const fullDescription = basicInfo + "【十二宫分布】\n" + palaceDescriptions.join("\n\n");
+    
+    return fullDescription;
+}
+
+
+
+
+
+
+
 
 export default function BaziPage() {
   return (
@@ -299,4 +395,3 @@ export default function BaziPage() {
     </Suspense>
   );
 }
-    

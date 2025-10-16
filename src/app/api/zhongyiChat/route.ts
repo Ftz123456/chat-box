@@ -26,31 +26,41 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.DASHSCOPE_API_KEY || 'sk-58c6269c6af3447b9e5b86c585ee50f8';
     const appId = process.env.DASHSCOPE_APP_ID || 'ede4f02d9fab4c73872c6d025d0ebe33';
-    
-    // Get the last user message
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-    const prompt = lastUserMessage?.content || '你好';
-
     const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
+    
+    // 紫微斗数系统提示词
+    let typeSystemPrompt= ''
+    // 构建请求消息数组
+    const requestMessages: Message[] = [];
+    
+    // 添加系统提示
+    if (typeSystemPrompt) {
+      requestMessages.push({
+        role: 'user',
+        content: typeSystemPrompt
+      });
+    }
+    
+    // 添加所有用户消息
+    messages.forEach(msg => {
+      if (msg.role === 'user') {
+        requestMessages.push(msg);
+      }
+    });
 
     const data = {
       input: {
-        prompt: prompt
+        messages: requestMessages
       },
-      parameters: {},
-      debug: {}
+      parameters: {
+        stream: true,
+        max_tokens: 4096
+      }
     };
 
-    console.log('Calling DashScope API:', url);
-    console.log('Request data:', JSON.stringify(data));
-    
-    // Use node-fetch which might handle the API better
-    console.log('Using node-fetch to call DashScope API');
-    
     try {
-      const fetch = (await import('node-fetch')).default;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -58,60 +68,75 @@ export async function POST(req: NextRequest) {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'User-Agent': 'Node.js'
+          'User-Agent': 'Next.js Server'
         },
         body: JSON.stringify(data),
         signal: controller.signal
       });
-      
+          console.log('Calling DashScope API:', url);
+    console.log('Request data:', JSON.stringify(data));
+    
       clearTimeout(timeoutId);
-      
-      console.log('Node-fetch response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('DashScope API error response:', errorText);
-        
         const requestId = response.headers.get('x-request-id');
         
         return NextResponse.json({ 
-          error: 'Failed to get response from DashScope',
+          error: 'API请求失败',
           status: response.status,
           request_id: requestId,
           details: errorText 
         }, { status: response.status });
       }
 
-      const responseData: DashScopeResponse = await response.json() as DashScopeResponse;
-      console.log('DashScope API success response:', responseData);
+      // 流式处理响应
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
       
-      if (responseData.output && responseData.output.text) {
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          result += chunk;
+        }
+      }
+
+      const responseData: DashScopeResponse = JSON.parse(result);
+      
+      if (responseData.output?.text) {
         return NextResponse.json({
           content: responseData.output.text
         });
       } else {
         return NextResponse.json({
-          error: 'No text output from DashScope',
+          error: 'API返回无有效内容',
           response: responseData
         }, { status: 500 });
       }
       
     } catch (error: any) {
-      console.error('Node-fetch error calling DashScope:', error.message, error.name);
       if (error.name === 'AbortError') {
         return NextResponse.json({ 
-          error: 'DashScope API request timed out',
-          message: 'The API did not respond within 10 seconds'
+          error: 'API请求超时',
+          message: '接口响应时间超过30秒',
+          solution: '请尝试缩短输入文本或分批发送'
         }, { status: 504 });
       }
-      throw error;
+      
+      return NextResponse.json({ 
+        error: '服务器内部错误',
+        message: error instanceof Error ? error.message : '未知错误'
+      }, { status: 500 });
     }
     
   } catch (error) {
-    console.error('API error:', error);
     return NextResponse.json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      error: '请求解析失败',
+      message: error instanceof Error ? error.message : '未知错误'
     }, { status: 500 });
   }
 }
