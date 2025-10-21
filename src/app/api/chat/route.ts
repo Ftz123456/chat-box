@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import pool from '@/lib/database';
+import { MessageService } from '@/lib/messageService';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -32,16 +31,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
     }
 
-    // 验证用户身份
-    const token = req.cookies.get('auth-token')?.value;
-    let userId = null;
-    
-    if (token) {
-      const user = await verifyToken(token);
-      if (user) {
-        userId = user.id;
-      }
-    }
+    // 获取用户ID（如果已登录）
+    const userId = await MessageService.getUserIdFromRequest(req);
 
     const apiKey = 'sk-21b564beabda4cef9eb987b0cfe81c1d';
 
@@ -168,8 +159,6 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
-    let assistantContent = '';
-    
     const stream = new ReadableStream({
       async start(controller) {
         const reader = response.body?.getReader();
@@ -177,6 +166,8 @@ export async function POST(req: NextRequest) {
           controller.close();
           return;
         }
+
+        let assistantContent = '';
 
         try {
           while (true) {
@@ -192,29 +183,31 @@ export async function POST(req: NextRequest) {
                 
                 if (data === '[DONE]') {
                   // 保存消息到数据库
-                  if (userId) {
+                  if (userId && assistantContent.trim()) {
                     try {
                       // 保存用户消息
-                      const lastUserMessage = messages[messages.length - 1];
-                      if (lastUserMessage && lastUserMessage.role === 'user') {
-                        await pool.execute(
-                          'INSERT INTO chat_messages (user_id, chat_type, role, content) VALUES (?, ?, ?, ?)',
-                          [userId, type, 'user', lastUserMessage.content]
-                        );
+                      const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+                      if (lastUserMessage) {
+                        await MessageService.saveMessage({
+                          userId,
+                          chatType: type,
+                          role: 'user',
+                          content: lastUserMessage.content
+                        });
                       }
-                      
+
                       // 保存助手回复
-                      if (assistantContent.trim()) {
-                        await pool.execute(
-                          'INSERT INTO chat_messages (user_id, chat_type, role, content) VALUES (?, ?, ?, ?)',
-                          [userId, type, 'assistant', assistantContent]
-                        );
-                      }
-                    } catch (dbError) {
-                      console.error('保存消息到数据库失败:', dbError);
+                      await MessageService.saveMessage({
+                        userId,
+                        chatType: type,
+                        role: 'assistant',
+                        content: assistantContent
+                      });
+                    } catch (error) {
+                      console.error('保存消息失败:', error);
                     }
                   }
-                  
+
                   controller.enqueue(encoder.encode('data: [DONE]\n\n'));
                   controller.close();
                   return;

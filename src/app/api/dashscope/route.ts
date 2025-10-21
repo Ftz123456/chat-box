@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MessageService } from '@/lib/messageService';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -23,6 +24,9 @@ export async function POST(req: NextRequest) {
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
     }
+
+    // 获取用户ID（如果已登录）
+    const userId = await MessageService.getUserIdFromRequest(req);
 
     const apiKey = 'sk-58c6269c6af3447b9e5b86c585ee50f8';
     const appId =  'ede4f02d9fab4c73872c6d025d0ebe33';
@@ -89,6 +93,32 @@ export async function POST(req: NextRequest) {
       console.log('DashScope API success response:', responseData);
       
       if (responseData.output && responseData.output.text) {
+        // 保存消息到数据库
+        if (userId) {
+          try {
+            // 保存用户消息
+            const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+            if (lastUserMessage) {
+              await MessageService.saveMessage({
+                userId,
+                chatType: 'zhongyi',
+                role: 'user',
+                content: lastUserMessage.content
+              });
+            }
+
+            // 保存助手回复
+            await MessageService.saveMessage({
+              userId,
+              chatType: 'zhongyi',
+              role: 'assistant',
+              content: responseData.output.text
+            });
+          } catch (error) {
+            console.error('保存消息失败:', error);
+          }
+        }
+
         return NextResponse.json({
           content: responseData.output.text
         });

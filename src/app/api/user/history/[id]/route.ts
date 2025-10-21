@@ -1,70 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import pool from '@/lib/database';
+import { MessageService } from '@/lib/messageService';
 
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = request.cookies.get('auth-token')?.value;
+    // 获取用户ID
+    const userId = await MessageService.getUserIdFromRequest(req);
     
-    if (!token) {
-      return NextResponse.json(
-        { error: '未登录' },
-        { status: 401 }
-      );
-    }
-
-    const user = await verifyToken(token);
-    if (!user) {
+    if (!userId) {
       return NextResponse.json(
         { error: '登录已过期' },
         { status: 401 }
       );
     }
 
-    const historyId = params.id;
-
-    // 获取特定历史记录的所有消息
-    const [messages] = await pool.execute(`
-      SELECT 
-        id,
-        chat_type,
-        role,
-        content,
-        created_at
-      FROM chat_messages 
-      WHERE user_id = ? AND id = ?
-      ORDER BY created_at ASC
-    `, [user.id, historyId]);
-
-    if ((messages as any[]).length === 0) {
+    const historyId = parseInt(params.id);
+    if (isNaN(historyId)) {
       return NextResponse.json(
-        { error: '历史记录不存在' },
-        { status: 404 }
+        { error: '无效的历史记录ID' },
+        { status: 400 }
       );
     }
 
-    // 获取该聊天类型的所有相关消息
-    const firstMessage = (messages as any[])[0];
-    const [allMessages] = await pool.execute(`
-      SELECT 
-        id,
-        role,
-        content,
-        created_at
-      FROM chat_messages 
-      WHERE user_id = ? AND chat_type = ? AND DATE(created_at) = DATE(?)
-      ORDER BY created_at ASC
-    `, [user.id, firstMessage.chat_type, firstMessage.created_at]);
+    // 获取历史记录详细消息
+    const messages = await MessageService.getHistoryMessages(userId, historyId);
 
-    return NextResponse.json({
-      chat_type: firstMessage.chat_type,
-      messages: allMessages,
-      date: firstMessage.created_at
-    });
-
+    return NextResponse.json(messages);
   } catch (error) {
     console.error('获取历史记录详情失败:', error);
     return NextResponse.json(

@@ -17,34 +17,9 @@ function BaziMain() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
 
   const contentWrapperRef = useRef<HTMLDivElement>(null);
   
-
-  // 加载历史记录
-  useEffect(() => {
-    const historyId = searchParams.get('historyId');
-    if (historyId) {
-      loadHistoryRecord(historyId);
-    }
-  }, [searchParams]);
-
-  const loadHistoryRecord = async (historyId: string) => {
-    try {
-      const response = await fetch(`/api/user/history/${historyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        const formattedMessages = data.messages.map((msg: any) => ({
-          role: msg.role,
-          content: msg.content
-        }));
-        setMessages(formattedMessages);
-      }
-    } catch (error) {
-      console.error('加载历史记录失败:', error);
-    }
-  };
 
   // 自动滚动到最新消息
   useEffect(() => {

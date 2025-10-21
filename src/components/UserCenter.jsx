@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -57,15 +59,29 @@ const UserCenter = () => {
   // 跳转到对应的聊天页面并显示历史记录
   const handleViewHistory = (item) => {
     const pathMap = {
-      '数字起卦': '/?type=digital',
-      '综合起卦': '/?type=comprehensive', 
-      '八字命理': '/bazi',
-      '紫微斗数': '/ziwei',
-      '马克思主义分析': '/marxist-analysis'
+      'digital': '/?type=digital',
+      'comprehensive': '/?type=comprehensive', 
+      'bazi': '/bazi',
+      'ziwei': '/ziwei',
+      'marxist': '/marxist-analysis',
+      'zhongyi': '/chat'
     };
     
     const path = pathMap[item.chat_type] || '/';
     router.push(`${path}?historyId=${item.id}`);
+  };
+
+  // 获取聊天类型的中文显示名称
+  const getChatTypeName = (chatType) => {
+    const nameMap = {
+      'digital': '数字起卦',
+      'comprehensive': '综合起卦',
+      'bazi': '八字命理',
+      'ziwei': '紫微斗数',
+      'marxist': '马克思主义分析',
+      'zhongyi': '中医咨询'
+    };
+    return nameMap[chatType] || chatType;
   };
   
   return (
@@ -229,7 +245,7 @@ const UserCenter = () => {
             historyItems.map((item, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
                 <div>
-                  <h3 className="font-medium">{item.chat_type}</h3>
+                  <h3 className="font-medium">{getChatTypeName(item.chat_type)}</h3>
                   <p className="text-gray-500 text-sm">
                     {new Date(item.created_at).toLocaleDateString('zh-CN')}
                   </p>

@@ -52,7 +52,7 @@ export async function initDatabase() {
       CREATE TABLE IF NOT EXISTS chat_messages (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
-        chat_type ENUM('digital', 'comprehensive', 'bazi', 'ziwei', 'marxist') NOT NULL,
+        chat_type ENUM('digital', 'comprehensive', 'bazi', 'ziwei', 'marxist', 'zhongyi') NOT NULL,
         role ENUM('user', 'assistant') NOT NULL,
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

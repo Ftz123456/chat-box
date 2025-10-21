@@ -2,7 +2,7 @@
 
 import OptionCard from '@/components/OptionCard';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -47,7 +47,6 @@ const createMessage = (role: Message['role'], content: string): Message => ({
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const [chatType, setChatType] = useState<'digital' | 'comprehensive'>('digital');
   const [messagesByType, setMessagesByType] = useState<Record<string, Message[]>>({
@@ -63,40 +62,6 @@ export default function Home() {
   const queueRef = useRef<string[]>([]);
 
   const hasMessages = messagesByType[chatType].length > 0;
-
-  // 加载历史记录
-  useEffect(() => {
-    const historyId = searchParams.get('historyId');
-    if (historyId) {
-      loadHistoryRecord(historyId);
-    }
-  }, [searchParams]);
-
-  const loadHistoryRecord = async (historyId: string) => {
-    try {
-      const response = await fetch(`/api/user/history/${historyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        const formattedMessages = data.messages.map((msg: any) => ({
-          id: msg.id.toString(),
-          role: msg.role,
-          content: msg.content,
-          timestamp: new Date(msg.created_at).getTime()
-        }));
-        
-        setMessagesByType(prev => ({
-          ...prev,
-          [data.chat_type]: formattedMessages
-        }));
-        
-        setChatType(data.chat_type as 'digital' | 'comprehensive');
-        setShowOptionCards(false);
-        setInitialPrompt(false);
-      }
-    } catch (error) {
-      console.error('加载历史记录失败:', error);
-    }
-  };
 
   // 返回按钮处理函数
   const handleBackToOptions = () => {
