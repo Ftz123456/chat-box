@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { saveConversationMessages } from '@/lib/messageService';
+import pool from '@/lib/database';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -10,7 +10,6 @@ interface Message {
 interface ChatRequest {
   messages: Message[];
   type?: 'digital' | 'comprehensive' | 'marxist';
-  conversationId?: number;
 }
 
 interface DeepSeekResponse {
@@ -27,7 +26,7 @@ interface StreamChunk {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, type = 'digital', conversationId }: ChatRequest = await req.json();
+    const { messages, type = 'digital' }: ChatRequest = await req.json();
     
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
@@ -195,32 +194,20 @@ export async function POST(req: NextRequest) {
                   // 保存消息到数据库
                   if (userId) {
                     try {
-                      const messagesToSave = [];
-                      
-                      // 添加用户消息
+                      // 保存用户消息
                       const lastUserMessage = messages[messages.length - 1];
                       if (lastUserMessage && lastUserMessage.role === 'user') {
-                        messagesToSave.push({
-                          role: 'user',
-                          content: lastUserMessage.content
-                        });
+                        await pool.execute(
+                          'INSERT INTO chat_messages (user_id, chat_type, role, content) VALUES (?, ?, ?, ?)',
+                          [userId, type, 'user', lastUserMessage.content]
+                        );
                       }
                       
-                      // 添加助手回复
+                      // 保存助手回复
                       if (assistantContent.trim()) {
-                        messagesToSave.push({
-                          role: 'assistant',
-                          content: assistantContent
-                        });
-                      }
-                      
-                      // 使用新的消息保存服务
-                      if (messagesToSave.length > 0) {
-                        await saveConversationMessages(
-                          userId,
-                          type as 'digital' | 'comprehensive' | 'bazi' | 'ziwei' | 'marxist',
-                          messagesToSave,
-                          conversationId
+                        await pool.execute(
+                          'INSERT INTO chat_messages (user_id, chat_type, role, content) VALUES (?, ?, ?, ?)',
+                          [userId, type, 'assistant', assistantContent]
                         );
                       }
                     } catch (dbError) {

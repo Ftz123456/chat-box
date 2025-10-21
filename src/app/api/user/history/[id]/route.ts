@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { getConversationDetails } from '@/lib/messageService';
+import pool from '@/lib/database';
 
 export async function GET(
   request: NextRequest,
@@ -24,21 +24,45 @@ export async function GET(
       );
     }
 
-    const conversationId = parseInt(params.id);
+    const historyId = params.id;
 
-    // 获取对话详情
-    const conversationData = await getConversationDetails(conversationId, user.id);
+    // 获取特定历史记录的所有消息
+    const [messages] = await pool.execute(`
+      SELECT 
+        id,
+        chat_type,
+        role,
+        content,
+        created_at
+      FROM chat_messages 
+      WHERE user_id = ? AND id = ?
+      ORDER BY created_at ASC
+    `, [user.id, historyId]);
 
-    if (!conversationData) {
+    if ((messages as any[]).length === 0) {
       return NextResponse.json(
         { error: '历史记录不存在' },
         { status: 404 }
       );
     }
 
+    // 获取该聊天类型的所有相关消息
+    const firstMessage = (messages as any[])[0];
+    const [allMessages] = await pool.execute(`
+      SELECT 
+        id,
+        role,
+        content,
+        created_at
+      FROM chat_messages 
+      WHERE user_id = ? AND chat_type = ? AND DATE(created_at) = DATE(?)
+      ORDER BY created_at ASC
+    `, [user.id, firstMessage.chat_type, firstMessage.created_at]);
+
     return NextResponse.json({
-      conversation: conversationData.conversation,
-      messages: conversationData.messages
+      chat_type: firstMessage.chat_type,
+      messages: allMessages,
+      date: firstMessage.created_at
     });
 
   } catch (error) {

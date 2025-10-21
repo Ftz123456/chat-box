@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useSidebar } from '@/components/Sidebar';
@@ -26,36 +26,11 @@ const DEFAULT_PROMPTS = [
 
 export default function MarxistAnalysis() {
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
-  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  // 加载历史记录
-  useEffect(() => {
-    const historyId = searchParams.get('historyId');
-    if (historyId) {
-      loadHistoryRecord(historyId);
-    }
-  }, [searchParams]);
-
-  const loadHistoryRecord = async (historyId: string) => {
-    try {
-      const response = await fetch(`/api/user/history/${historyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        const formattedMessages = data.messages.map((msg: any) => ({
-          role: msg.role,
-          content: msg.content
-        }));
-        setMessages(formattedMessages);
-      }
-    } catch (error) {
-      console.error('加载历史记录失败:', error);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,15 +50,12 @@ export default function MarxistAnalysis() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/dashscope', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          messages: newMessages,
-          type: 'marxist'
-        }),
+        body: JSON.stringify({ messages: newMessages }),
       });
 
       if (!response.ok) {

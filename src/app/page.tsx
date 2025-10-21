@@ -86,10 +86,10 @@ export default function Home() {
         
         setMessagesByType(prev => ({
           ...prev,
-          [data.conversation.chat_type]: formattedMessages
+          [data.chat_type]: formattedMessages
         }));
         
-        setChatType(data.conversation.chat_type as 'digital' | 'comprehensive');
+        setChatType(data.chat_type as 'digital' | 'comprehensive');
         setShowOptionCards(false);
         setInitialPrompt(false);
       }

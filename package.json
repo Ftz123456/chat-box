@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "init-db": "node scripts/init-db.js",
-    "migrate-db": "node scripts/migrate-database.js"
+    "init-db": "node scripts/init-db.js"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.16",

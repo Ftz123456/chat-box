@@ -57,11 +57,11 @@ const UserCenter = () => {
   // 跳转到对应的聊天页面并显示历史记录
   const handleViewHistory = (item) => {
     const pathMap = {
-      'digital': '/?type=digital',
-      'comprehensive': '/?type=comprehensive', 
-      'bazi': '/bazi',
-      'ziwei': '/ziwei',
-      'marxist': '/marxist-analysis'
+      '数字起卦': '/?type=digital',
+      '综合起卦': '/?type=comprehensive', 
+      '八字命理': '/bazi',
+      '紫微斗数': '/ziwei',
+      '马克思主义分析': '/marxist-analysis'
     };
     
     const path = pathMap[item.chat_type] || '/';
@@ -228,16 +228,11 @@ const UserCenter = () => {
           ) : (
             historyItems.map((item, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
-                <div className="flex-1">
-                  <h3 className="font-medium">{item.title || item.chat_type}</h3>
+                <div>
+                  <h3 className="font-medium">{item.chat_type}</h3>
                   <p className="text-gray-500 text-sm">
-                    {new Date(item.created_at).toLocaleDateString('zh-CN')} · {item.message_count}条消息
+                    {new Date(item.created_at).toLocaleDateString('zh-CN')}
                   </p>
-                  {item.preview && (
-                    <p className="text-gray-400 text-xs mt-1 truncate">
-                      {item.preview}
-                    </p>
-                  )}
                 </div>
                 <div className="flex flex-col space-y-2">
                   <button 
