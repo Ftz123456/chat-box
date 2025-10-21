@@ -26,6 +26,9 @@ const UserCenter = () => {
         if (response.ok) {
           const data = await response.json();
           setStats(data);
+        } else if (response.status === 401) {
+          console.log('用户未登录，跳转到登录页面');
+          router.push('/login');
         }
       } catch (error) {
         console.error('获取用户统计失败:', error);
@@ -33,7 +36,7 @@ const UserCenter = () => {
     };
 
     fetchUserStats();
-  }, [user]);
+  }, [user, router]);
 
   // 获取用户历史记录
   useEffect(() => {
@@ -45,6 +48,9 @@ const UserCenter = () => {
         if (response.ok) {
           const data = await response.json();
           setHistoryItems(data);
+        } else if (response.status === 401) {
+          console.log('用户未登录，跳转到登录页面');
+          router.push('/login');
         }
       } catch (error) {
         console.error('获取历史记录失败:', error);
@@ -54,7 +60,7 @@ const UserCenter = () => {
     };
 
     fetchHistory();
-  }, [user]);
+  }, [user, router]);
 
   // 跳转到对应的聊天页面并显示历史记录
   const handleViewHistory = (item) => {
@@ -84,6 +90,40 @@ const UserCenter = () => {
     return nameMap[chatType] || chatType;
   };
   
+  // 如果用户未登录，显示登录提示
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+        <div className="text-center py-12">
+          <div className="text-gray-500 mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-16 h-16 mx-auto text-gray-300"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">请先登录</h2>
+          <p className="text-gray-500 mb-6">登录后即可查看您的个人中心和历史记录</p>
+          <button
+            onClick={() => router.push('/login')}
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
+          >
+            立即登录
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
       {/* 用户头部区域 */}

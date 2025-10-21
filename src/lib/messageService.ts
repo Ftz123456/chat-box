@@ -48,8 +48,8 @@ export class MessageService {
         return null;
       }
 
-      const decoded = verifyToken(token);
-      return decoded?.userId || null;
+      const user = await verifyToken(token);
+      return user?.id || null;
     } catch (error) {
       console.error('获取用户ID失败:', error);
       return null;
