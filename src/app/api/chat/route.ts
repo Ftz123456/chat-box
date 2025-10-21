@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@/lib/auth';
+import { saveConversationMessages } from '@/lib/messageService';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -8,6 +10,7 @@ interface Message {
 interface ChatRequest {
   messages: Message[];
   type?: 'digital' | 'comprehensive' | 'marxist';
+  conversationId?: number;
 }
 
 interface DeepSeekResponse {
@@ -24,10 +27,21 @@ interface StreamChunk {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, type = 'digital' }: ChatRequest = await req.json();
+    const { messages, type = 'digital', conversationId }: ChatRequest = await req.json();
     
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
+    }
+
+    // 验证用户身份
+    const token = req.cookies.get('auth-token')?.value;
+    let userId = null;
+    
+    if (token) {
+      const user = await verifyToken(token);
+      if (user) {
+        userId = user.id;
+      }
     }
 
     const apiKey = 'sk-21b564beabda4cef9eb987b0cfe81c1d';
@@ -155,6 +169,8 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
+    let assistantContent = '';
+    
     const stream = new ReadableStream({
       async start(controller) {
         const reader = response.body?.getReader();
@@ -176,6 +192,42 @@ export async function POST(req: NextRequest) {
                 const data = line.slice(6);
                 
                 if (data === '[DONE]') {
+                  // 保存消息到数据库
+                  if (userId) {
+                    try {
+                      const messagesToSave = [];
+                      
+                      // 添加用户消息
+                      const lastUserMessage = messages[messages.length - 1];
+                      if (lastUserMessage && lastUserMessage.role === 'user') {
+                        messagesToSave.push({
+                          role: 'user',
+                          content: lastUserMessage.content
+                        });
+                      }
+                      
+                      // 添加助手回复
+                      if (assistantContent.trim()) {
+                        messagesToSave.push({
+                          role: 'assistant',
+                          content: assistantContent
+                        });
+                      }
+                      
+                      // 使用新的消息保存服务
+                      if (messagesToSave.length > 0) {
+                        await saveConversationMessages(
+                          userId,
+                          type as 'digital' | 'comprehensive' | 'bazi' | 'ziwei' | 'marxist',
+                          messagesToSave,
+                          conversationId
+                        );
+                      }
+                    } catch (dbError) {
+                      console.error('保存消息到数据库失败:', dbError);
+                    }
+                  }
+                  
                   controller.enqueue(encoder.encode('data: [DONE]\n\n'));
                   controller.close();
                   return;
@@ -186,6 +238,7 @@ export async function POST(req: NextRequest) {
                   const content = parsed.choices?.[0]?.delta?.content;
                   
                   if (content) {
+                    assistantContent += content;
                     const chunk: StreamChunk = { content };
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
                   }

@@ -2,11 +2,12 @@
 
 import OptionCard from '@/components/OptionCard';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { throttle } from 'lodash';
+import { useSidebar } from '@/components/Sidebar';
 
 interface Message {
   id: string;
@@ -46,6 +47,8 @@ const createMessage = (role: Message['role'], content: string): Message => ({
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const [chatType, setChatType] = useState<'digital' | 'comprehensive'>('digital');
   const [messagesByType, setMessagesByType] = useState<Record<string, Message[]>>({
     digital: [],
@@ -54,31 +57,62 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showOptionCards, setShowOptionCards] = useState(true);
-  
+  const [initialPrompt, setInitialPrompt] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentAssistantMessageId = useRef<string | null>(null);
   const queueRef = useRef<string[]>([]);
 
   const hasMessages = messagesByType[chatType].length > 0;
-const getPromptContent = () => {
-  if (showOptionCards) {
-    return "请选择上方的数字起卦或综合起卦方式开始占卜，或者直接输入内容使用默认的数字起卦模式。";
-  }
-};
+
+  // 加载历史记录
+  useEffect(() => {
+    const historyId = searchParams.get('historyId');
+    if (historyId) {
+      loadHistoryRecord(historyId);
+    }
+  }, [searchParams]);
+
+  const loadHistoryRecord = async (historyId: string) => {
+    try {
+      const response = await fetch(`/api/user/history/${historyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages = data.messages.map((msg: any) => ({
+          id: msg.id.toString(),
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime()
+        }));
+        
+        setMessagesByType(prev => ({
+          ...prev,
+          [data.conversation.chat_type]: formattedMessages
+        }));
+        
+        setChatType(data.conversation.chat_type as 'digital' | 'comprehensive');
+        setShowOptionCards(false);
+        setInitialPrompt(false);
+      }
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+    }
+  };
+
   // 返回按钮处理函数
   const handleBackToOptions = () => {
     setShowOptionCards(true);
+    setInitialPrompt(true);
   };
 
   // 切换聊天类型时隐藏选项卡
   const handleDigitalDivination = () => {
     setChatType('digital');
-    setShowOptionCards(false);
+    
   };
 
   const handleComprehensiveDivination = () => {
     setChatType('comprehensive');
-    setShowOptionCards(false);
+   
   };
 
   // 清空对话
@@ -87,6 +121,7 @@ const getPromptContent = () => {
       ...prev,
       [chatType]: []
     }));
+    setInitialPrompt(true);
   };
 
   // 节流函数优化
@@ -141,15 +176,17 @@ const getPromptContent = () => {
   }, [messagesByType[chatType], isLoading, scrollToBottom]);
 
   const sendMessage = async () => {
+     setShowOptionCards(false);
     if (!input.trim() || isLoading) return;
+    setInitialPrompt(false);
 
     // 关键修改：用户直接输入时，如果没有选择方式，默认使用数字起卦[1,2](@ref)
     let actualChatType = chatType;
-    if (showOptionCards) {
-      actualChatType = 'digital'; // 默认数字起卦
-      setChatType('digital');
-      setShowOptionCards(false);
-    }
+    // if (showOptionCards) {
+    //   actualChatType = 'digital'; // 默认数字起卦
+    //   setChatType('digital');
+    //   setShowOptionCards(false);
+    // }
 
     const userMessage = createMessage('user', input);
     setMessagesByType(prev => ({
@@ -258,35 +295,23 @@ const getPromptContent = () => {
       {/* 内容区域 */}
       <div 
         ref={messagesEndRef}
-        className="flex-1 overflow-y-auto pb-32" // 增加底部padding为输入框留出空间[6,8](@ref)
+        className="flex-1 overflow-y-auto pb-32 lg:pb-32" // 增加底部padding为输入框留出空间
         style={{ 
-          padding: '24px',
+          padding: '16px lg:24px',
           maxHeight: 'calc(100vh - 130px)',
           boxSizing: 'border-box'
         }}
       >
         {/* Header */}
+         {showOptionCards && (
         <div className="bg-white shadow-sm border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
             <div className="flex items-center justify-between">
-              {/* 返回按钮 - 左上角，选择后显示 */}
               <div className="flex-1">
-                {!showOptionCards && (
-                  <button
-                    onClick={handleBackToOptions}
-                    className="flex items-center px-4 py-2 text-sm text-blue-600 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    返回选择
-                  </button>
-                )}
               </div>
-
               {/* 标题区域 */}
               <div className="flex-1 text-center">
-                <div className="inline-flex items-center justify-center w-24 h-24 mb-6 shadow-lg rounded-full overflow-hidden bg-white">
+                <div className="inline-flex items-center justify-center w-16 h-16 lg:w-24 lg:h-24 mb-4 lg:mb-6 shadow-lg rounded-full overflow-hidden bg-white">
                   <Image
                     src="/log.png"
                     alt="易璇AI"
@@ -295,22 +320,17 @@ const getPromptContent = () => {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <h1 className="text-4xl font-bold text-gray-800 mb-4">欢迎使用易璇AI</h1>
-                <p className="text-xl text-gray-600">
+                <h1 className="text-2xl lg:text-4xl font-bold text-gray-800 mb-2 lg:mb-4">欢迎使用易璇AI</h1>
+                <p className="text-lg lg:text-xl text-gray-600">
                   {showOptionCards ? '请选择您的起卦方式' : `${chatType === 'digital' ? '数字起卦' : '综合起卦'}`}
                 </p>
               </div>
-
+                
               <div className="flex-1"></div>
+              
             </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          {/* Option Cards - 条件渲染 */}
-          {showOptionCards && (
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+           
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-8 max-w-4xl mx-auto mb-8 lg:mb-16">
               <OptionCard
                 title="数字起卦"
                 subtitle="通过三个数字起卦"
@@ -326,25 +346,39 @@ const getPromptContent = () => {
                 onClick={handleComprehensiveDivination}
               />
             </div>
-          )}
+        
+          </div>
+        </div>
+      )}
 
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-12">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 relative">
-            <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 relative">
+            <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6">
               {/* 控制按钮区域 */}
-              {currentMessages.length > 0 && !showOptionCards && (
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-lg font-semibold text-gray-700">
+              {!showOptionCards && (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">  
+                    <button
+                    onClick={handleBackToOptions}
+                    className="flex items-center px-3 py-2 text-sm text-blue-600 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    返回选择
+                  </button>
+                    <span className="text-base lg:text-lg font-semibold text-gray-700">
                       {chatType === 'digital' ? '数字起卦' : '综合起卦'}
                     </span>
-                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-xs lg:text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       {currentMessages.length} 条消息
                     </span>
                   </div>
                   <button
                     onClick={clearChat}
-                    className="flex items-center px-4 py-2 text-sm text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                    className="flex items-center px-3 py-2 text-sm text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -355,29 +389,18 @@ const getPromptContent = () => {
               )}
               
               {/* 初始提示 */}
-              {currentMessages.length === 0 && !showOptionCards && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+              {initialPrompt && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 lg:p-8">
+                  <div className="bg-blue-50 rounded-xl p-4 lg:p-6 border border-blue-100">
                     <div className="prose prose-blue max-w-none">
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                      <p className="text-sm lg:text-base text-gray-700 leading-relaxed whitespace-pre-line">
                          {getInitialPrompt()}
                       </p>  
                     </div>
                   </div>
                 </div>
               )}
-              {/* 初始提示 */}
-              { showOptionCards && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                    <div className="prose prose-blue max-w-none">
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                         {getPromptContent()}
-                      </p>  
-                    </div>
-                  </div>
-                </div>
-              )}
+         
 
               {/* 消息列表 */}
               {!showOptionCards && currentMessages.map((message) => (
@@ -386,7 +409,7 @@ const getPromptContent = () => {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
                 >
                   <div
-                    className={`max-w-2xl px-6 py-4 rounded-2xl shadow-sm border ${
+                    className={`max-w-xs sm:max-w-md lg:max-w-2xl px-4 lg:px-6 py-3 lg:py-4 rounded-2xl shadow-sm border ${
                       message.role === 'user'
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-800 border-gray-200'
@@ -463,29 +486,28 @@ const getPromptContent = () => {
         </div>
       </div>
 
-      {/* Input Area - 始终显示，不条件渲染[6,8](@ref) */}
-      <div 
-        className="bg-white border-t border-gray-200 p-6 fixed bottom-0 left-0 right-0 z-50 relative"
-        style={{ 
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
-          boxSizing: 'border-box'
-        }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <div className="flex space-x-4 items-end">
-            <div className="flex-1 relative">
+      {/* Input Area - 在移动端侧边栏打开时隐藏 */}
+      {!(isMobile && isSidebarOpen) && (
+        <div 
+          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-0 lg:right-0 z-30 relative"
+          style={{ 
+            boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
+            boxSizing: 'border-box'
+          }}
+        >
+        <div className="max-w-6xl mx-auto px-4 lg:px-8">
+          <div className="flex space-x-2 lg:space-x-4 items-end">
+            <div className="flex-1 max-w-2xl relative">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  showOptionCards 
-                    ? "请输入三个数字和占卜问题（默认使用数字起卦）..." 
-                    : chatType === 'digital' 
+                    chatType === 'digital' 
                     ? "请输入三个数字和占卜问题..." 
                     : "请描述您想要占卜的问题..."
                 }
-                className="w-full resize-none border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200 min-h-[52px] max-h-32 text-gray-900 bg-white placeholder:text-gray-500"
+                className="w-full resize-none border border-gray-300 rounded-xl px-3 lg:px-4 py-2 lg:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200 min-h-[44px] lg:min-h-[52px] max-h-32 text-gray-900 bg-white placeholder:text-gray-500 text-sm lg:text-base"
                 rows={1}
                 disabled={isLoading}
                 style={{
@@ -503,23 +525,19 @@ const getPromptContent = () => {
             <button
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium min-w-[80px] flex items-center justify-center h-[52px]"
+              className="px-4 lg:px-6 py-2 lg:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium min-w-[60px] lg:min-w-[80px] flex items-center justify-center h-[44px] lg:h-[52px] text-sm lg:text-base"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 '发送'
               )}
             </button>
           </div>
-          {/* 提示信息：当显示选项卡片时提示默认使用数字起卦 */}
-          {showOptionCards && (
-            <div className="mt-2 text-xs text-gray-500 text-center">
-              直接输入将默认使用数字起卦模式，或选择上方起卦方式
-            </div>
-          )}
+         
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useSidebar } from '@/components/Sidebar';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -34,6 +35,7 @@ const DEFAULT_PROMPTS = {
 };
 
 function ChatContent() {
+  const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -158,6 +160,8 @@ function ChatContent() {
             <button
               onClick={() => router.back()}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="返回"
+              title="返回"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -174,7 +178,7 @@ function ChatContent() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 pb-32 lg:pb-32">
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -278,11 +282,12 @@ function ChatContent() {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex space-x-4 items-end">
-            <div className="flex-1">
+      {/* Input Area - 在移动端侧边栏打开时隐藏 */}
+      {!(isMobile && isSidebarOpen) && (
+        <div className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 lg:right-64 z-30 relative" style={{ boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)', boxSizing: 'border-box' }}>
+        <div className="max-w-6xl mx-auto px-4 lg:px-8">
+          <div className="flex space-x-2 lg:space-x-4 items-end">
+            <div className="flex-1 max-w-2xl">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -311,7 +316,8 @@ function ChatContent() {
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

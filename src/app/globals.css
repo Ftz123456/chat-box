@@ -41,7 +41,7 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -50,11 +50,18 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Mobile scrollbar */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
 }
 
 /* Animations */
@@ -89,12 +96,31 @@ body {
 .prose pre {
   background-color: #f1f5f9;
   border: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  overflow-x: auto;
 }
 
 .prose code {
   background-color: #f1f5f9;
   color: #475569;
   font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* Mobile prose adjustments */
+@media (max-width: 768px) {
+  .prose {
+    font-size: 0.875rem;
+  }
+  
+  .prose pre {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  .prose code {
+    font-size: 0.75rem;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,5 +132,16 @@ body {
   .prose code {
     background-color: #1e293b;
     color: #cbd5e1;
+  }
+}
+
+/* Safe area padding for fixed bottom bars */
+.safe-bottom {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 768px) {
+  .safe-bottom {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   }
 }

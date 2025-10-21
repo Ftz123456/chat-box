@@ -6,14 +6,12 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 
-export default function RegisterPage() {
-  const [username, setUsername] = useState('');
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { register } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,29 +19,8 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
-    // 验证密码确认
-    if (password !== confirmPassword) {
-      setError('两次输入的密码不一致');
-      setLoading(false);
-      return;
-    }
-
-    // 验证密码强度
-    if (password.length < 6) {
-      setError('密码长度至少6位');
-      setLoading(false);
-      return;
-    }
-
-    // 验证用户名长度
-    if (username.length < 2 || username.length > 20) {
-      setError('用户名长度应在2-20个字符之间');
-      setLoading(false);
-      return;
-    }
-
     try {
-      await register(username, email, password);
+      await login(email, password);
       router.push('/');
     } catch (err: any) {
       setError(err.message);
@@ -66,40 +43,23 @@ export default function RegisterPage() {
             />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            注册易璇AI账户
+            登录到易璇AI
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            已有账户？{' '}
+            还没有账户？{' '}
             <Link
-              href="/login"
+              href="/register"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
-              立即登录
+              立即注册
             </Link>
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                用户名
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入用户名"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="sr-only">
                 邮箱地址
               </label>
               <input
@@ -108,44 +68,26 @@ export default function RegisterPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入邮箱地址"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="邮箱地址"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="sr-only">
                 密码
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
+                autoComplete="current-password"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入密码（至少6位）"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                确认密码
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请再次输入密码"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
           </div>
@@ -165,10 +107,10 @@ export default function RegisterPage() {
               {loading ? (
                 <div className="flex items-center">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                  注册中...
+                  登录中...
                 </div>
               ) : (
-                '注册'
+                '登录'
               )}
             </button>
           </div>

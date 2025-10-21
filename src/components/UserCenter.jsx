@@ -1,12 +1,72 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const UserCenter = () => {
-  // 历史记录数据
-  const historyItems = [
-    { title: "八字分析", date: "2025年10月1日" },
-    { title: "紫薇斗数", date: "2025年9月28日" },
-    { title: "梅花易数", date: "2025年9月25日" }
-  ];
+  const { user } = useAuth();
+  const router = useRouter();
+  const [historyItems, setHistoryItems] = useState([]);
+  const [stats, setStats] = useState({
+    totalConsultations: 0,
+    learningProgress: 0,
+    badges: 0,
+    membershipLevel: '普通'
+  });
+  const [loading, setLoading] = useState(true);
+
+  // 获取用户统计数据
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await fetch('/api/user/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('获取用户统计失败:', error);
+      }
+    };
+
+    fetchUserStats();
+  }, [user]);
+
+  // 获取用户历史记录
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await fetch('/api/user/history');
+        if (response.ok) {
+          const data = await response.json();
+          setHistoryItems(data);
+        }
+      } catch (error) {
+        console.error('获取历史记录失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [user]);
+
+  // 跳转到对应的聊天页面并显示历史记录
+  const handleViewHistory = (item) => {
+    const pathMap = {
+      'digital': '/?type=digital',
+      'comprehensive': '/?type=comprehensive', 
+      'bazi': '/bazi',
+      'ziwei': '/ziwei',
+      'marxist': '/marxist-analysis'
+    };
+    
+    const path = pathMap[item.chat_type] || '/';
+    router.push(`${path}?historyId=${item.id}`);
+  };
   
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -14,25 +74,26 @@ const UserCenter = () => {
       <div className="flex items-center space-x-4">
         {/* 用户图标 */}
         <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+          {user?.avatar ? (
+            <img 
+              src={user.avatar} 
+              alt={user.username} 
+              className="w-12 h-12 rounded-full object-cover"
             />
-          </svg>
+          ) : (
+            <span className="text-lg font-medium">
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
+            </span>
+          )}
         </div>
         {/* 标题区域 */}
         <div>
-          <h2 className="text-xl font-semibold">用户中心</h2>
-          <p className="text-gray-500 text-sm">探索国学智慧，掌握人生命理</p>
+          <h2 className="text-xl font-semibold">
+            {user ? `${user.username} 的用户中心` : '用户中心'}
+          </h2>
+          <p className="text-gray-500 text-sm">
+            {user?.email || '探索国学智慧，掌握人生命理'}
+          </p>
         </div>
       </div>
       
@@ -56,7 +117,7 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">24</div>
+          <div className="text-xl font-semibold">{stats.totalConsultations}</div>
           <div className="text-gray-500 text-sm">咨询次数</div>
         </div>
         
@@ -78,7 +139,7 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">68%</div>
+          <div className="text-xl font-semibold">{stats.learningProgress}%</div>
           <div className="text-gray-500 text-sm">学习详细资料</div>
         </div>
         
@@ -100,7 +161,7 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">12</div>
+          <div className="text-xl font-semibold">{stats.badges}</div>
           <div className="text-gray-500 text-sm">获得勋章</div>
         </div>
         
@@ -127,7 +188,7 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">贵宾</div>
+          <div className="text-xl font-semibold">{stats.membershipLevel}</div>
           <div className="text-gray-500 text-sm">会员等级</div>
         </div>
       </div>
@@ -142,7 +203,7 @@ const UserCenter = () => {
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-5 h-5 text-gray-500"
+            className="w-5 h-5 text-blue-500"
           >
             <path
               strokeLinecap="round"
@@ -155,18 +216,41 @@ const UserCenter = () => {
         
         {/* 历史记录列表 */}
         <div>
-          {historyItems.map((item, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
-              <div>
-                <h3 className="font-medium">{item.title}</h3>
-                <p className="text-gray-500 text-sm">{item.date}</p>
-              </div>
-              <div className="flex flex-col space-y-2">
-                <button className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition">查看</button>
-                <span className="bg-blue-100 text-blue-500 px-2 py-0.5 rounded text-xs">已完成</span>
-              </div>
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <p className="text-gray-500 mt-2">加载中...</p>
             </div>
-          ))}
+          ) : historyItems.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>暂无历史记录</p>
+            </div>
+          ) : (
+            historyItems.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
+                <div className="flex-1">
+                  <h3 className="font-medium">{item.title || item.chat_type}</h3>
+                  <p className="text-gray-500 text-sm">
+                    {new Date(item.created_at).toLocaleDateString('zh-CN')} · {item.message_count}条消息
+                  </p>
+                  {item.preview && (
+                    <p className="text-gray-400 text-xs mt-1 truncate">
+                      {item.preview}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <button 
+                    onClick={() => handleViewHistory(item)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition"
+                  >
+                    查看
+                  </button>
+                  <span className="bg-blue-100 text-blue-500 px-2 py-0.5 rounded text-xs">已完成</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

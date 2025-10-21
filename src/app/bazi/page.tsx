@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useSidebar } from '@/components/Sidebar';
 
 import { astro } from "iztro";
 interface Message {
@@ -11,12 +12,39 @@ interface Message {
 }
 
 function BaziMain() {
+  const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
 
   const contentWrapperRef = useRef<HTMLDivElement>(null);
+  
+
+  // 加载历史记录
+  useEffect(() => {
+    const historyId = searchParams.get('historyId');
+    if (historyId) {
+      loadHistoryRecord(historyId);
+    }
+  }, [searchParams]);
+
+  const loadHistoryRecord = async (historyId: string) => {
+    try {
+      const response = await fetch(`/api/user/history/${historyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages = data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+    }
+  };
 
   // 自动滚动到最新消息
   useEffect(() => {
@@ -34,12 +62,15 @@ function BaziMain() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/zhongyiChat', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ 
+          messages: newMessages,
+          type: 'bazi'
+        }),
       });
 
       if (!response.ok) {
@@ -83,12 +114,12 @@ function BaziMain() {
         ref={contentWrapperRef}
         className="flex-1 overflow-y-auto"
         style={{ 
-          padding: '24px',
+          padding: '16px lg:24px',
           maxHeight: 'calc(100vh - 130px)', // 精确计算高度，避开输入框
           boxSizing: 'border-box'
         }}
       >
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6">
           {messages.length === 0 ? (
             <BaziPrompt />
           ) : (
@@ -99,7 +130,7 @@ function BaziMain() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in mb-4`}
                 >
                   <div
-                    className={`max-w-2xl px-6 py-4 rounded-2xl shadow-sm border ${message.role === 'user'
+                    className={`max-w-xs sm:max-w-md lg:max-w-2xl px-4 lg:px-6 py-3 lg:py-4 rounded-2xl shadow-sm border ${message.role === 'user'
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'bg-white text-gray-800 border-gray-200'
                     }`}
@@ -154,24 +185,25 @@ function BaziMain() {
         </div>
       </div>
 
-      {/* 输入区域 - 完全隔离的固定定位 */}
-      <div 
-        className="bg-white border-t border-gray-200 p-6 fixed bottom-0 left-0 right-0 z-50 relative"
-        style={{ 
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
-          boxSizing: 'border-box' // 确保padding不影响宽度
-        }}
-      >
+      {/* 输入区域 - 在移动端侧边栏打开时隐藏 */}
+      {!(isMobile && isSidebarOpen) && (
+        <div 
+          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-0 lg:right-0 z-30 relative"
+          style={{ 
+            boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
+            boxSizing: 'border-box' // 确保padding不影响宽度
+          }}
+        >
         {/* 与内容区域严格对齐 */}
-        <div className="max-w-4xl mx-auto">
-          <div className="flex space-x-4 items-end">
-            <div className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 lg:px-8">
+          <div className="flex space-x-2 lg:space-x-4 items-end">
+            <div className="flex-1 max-w-2xl">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={"请根据八字命理使用说明，输入您的问题"}
-                className="w-full resize-none border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200 min-h-[52px] max-h-32 text-gray-900 bg-white placeholder:text-gray-500"
+                className="w-full resize-none border border-gray-300 rounded-xl px-3 lg:px-4 py-2 lg:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200 min-h-[44px] lg:min-h-[52px] max-h-32 text-gray-900 bg-white placeholder:text-gray-500 text-sm lg:text-base"
                 rows={1}
                 disabled={isLoading}
                 style={{ lineHeight: '1.5', fontSize: '16px' }}
@@ -180,17 +212,18 @@ function BaziMain() {
             <button
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium min-w-[80px] flex items-center justify-center h-[52px]"
+              className="px-4 lg:px-6 py-2 lg:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium min-w-[60px] lg:min-w-[80px] flex items-center justify-center h-[44px] lg:h-[52px] text-sm lg:text-base"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 '发送'
               )}
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -198,29 +231,29 @@ function BaziMain() {
 // 修改说明面板，避免高度冲突
 function BaziPrompt() {
   return (
-    <div className="bg-white rounded-xl shadow-md p-8 md:p-10">
+    <div className="bg-white rounded-xl shadow-md p-4 lg:p-8 xl:p-10">
        {/* Header */}
     <div className="bg-white shadow-sm border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4 lg:py-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">八字命理说明</h1>
+          <h1 className="text-2xl lg:text-4xl font-bold text-gray-800 mb-2 lg:mb-4">八字命理说明</h1>
         </div>
       </div>
     </div>
 
       {/* 引言部分 */}
-        <div className="mb-8">
-          <p className="text-lg text-gray-700 leading-relaxed">
+        <div className="mb-6 lg:mb-8">
+          <p className="text-base lg:text-lg text-gray-700 leading-relaxed">
             同志您好！作为马克思主义命理分析助手，我的说明书可以这样简明概括：
           </p>
         </div>
 
         {/* 核心功能部分 */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+        <div className="mb-6 lg:mb-8">
+          <h2 className="text-xl lg:text-2xl font-semibold text-gray-800 mb-3 lg:mb-4 pb-2 border-b border-gray-200">
             1. 核心功能
           </h2>
-          <ul className="space-y-3 text-gray-700">
+          <ul className="space-y-2 lg:space-y-3 text-sm lg:text-base text-gray-700">
             <li className="flex items-start">
               <span className="text-blue-500 mr-2">•</span>
               <span>八字命理唯物分析 矛盾论指导下的性格解构 实践论指引的改运建议</span>

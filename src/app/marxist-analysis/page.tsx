@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useSidebar } from '@/components/Sidebar';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -24,11 +25,37 @@ const DEFAULT_PROMPTS = [
 ];
 
 export default function MarxistAnalysis() {
+  const { isOpen: isSidebarOpen, isMobile } = useSidebar();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // 加载历史记录
+  useEffect(() => {
+    const historyId = searchParams.get('historyId');
+    if (historyId) {
+      loadHistoryRecord(historyId);
+    }
+  }, [searchParams]);
+
+  const loadHistoryRecord = async (historyId: string) => {
+    try {
+      const response = await fetch(`/api/user/history/${historyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages = data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,12 +75,15 @@ export default function MarxistAnalysis() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/dashscope', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ 
+          messages: newMessages,
+          type: 'marxist'
+        }),
       });
 
       if (!response.ok) {
@@ -92,45 +122,46 @@ export default function MarxistAnalysis() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => router.back()}
                 className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+                aria-label="返回"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-bold">马克思主义分析</h1>
-                <p className="text-red-100 text-sm">基于马克思主义理论的社会现象分析</p>
+                <h1 className="text-lg lg:text-xl font-bold">马克思主义分析</h1>
+                <p className="text-red-100 text-xs lg:text-sm">基于马克思主义理论的社会现象分析</p>
               </div>
             </div>
-            <div className="text-2xl">⭐</div>
+            <div className="text-xl lg:text-2xl">⭐</div>
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20">
+        <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6">
           {messages.length === 0 && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">马</span>
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 lg:p-8">
+              <div className="text-center mb-4 lg:mb-6">
+                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full mx-auto mb-3 lg:mb-4 flex items-center justify-center">
+                  <span className="text-white text-lg lg:text-2xl font-bold">马</span>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">马克思主义理论分析</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-2">马克思主义理论分析</h2>
               </div>
               
-              <div className="bg-red-50 rounded-xl p-6 border border-red-100">
+              <div className="bg-red-50 rounded-xl p-4 lg:p-6 border border-red-100">
                 <div className="prose prose-red max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  <p className="text-sm lg:text-base text-gray-700 leading-relaxed whitespace-pre-line">
                     {DEFAULT_PROMPTS[0]}
                   </p>
                 </div>
@@ -144,7 +175,7 @@ export default function MarxistAnalysis() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
             >
               <div
-                className={`max-w-2xl px-6 py-4 rounded-2xl shadow-sm border ${message.role === 'user'
+                className={`max-w-xs sm:max-w-md lg:max-w-2xl px-4 lg:px-6 py-3 lg:py-4 rounded-2xl shadow-sm border ${message.role === 'user'
                     ? 'bg-red-600 text-white border-red-600'
                     : 'bg-white text-gray-800 border-gray-200'
                   }`}
@@ -215,40 +246,42 @@ export default function MarxistAnalysis() {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex space-x-4 items-end">
-            <div className="flex-1">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="请描述您想要分析的社会现象或问题..."
-                className="w-full resize-none border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent shadow-sm transition-all duration-200 min-h-[52px] max-h-32 text-gray-900 bg-white placeholder:text-gray-500"
-                rows={1}
-                disabled={isLoading}
-                style={{
-                  lineHeight: '1.5',
-                  fontSize: '16px'
-                }}
-              />
-            </div>
+      {/* Input Area - 在移动端侧边栏打开时隐藏 */}
+      {!(isMobile && isSidebarOpen) && (
+        <div className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 lg:right-64 z-30 relative">
+          <div className="max-w-6xl mx-auto px-4 lg:px-8">
+            <div className="flex space-x-2 lg:space-x-4 items-end">
+              <div className="flex-1 max-w-2xl">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="请描述您想要分析的社会现象或问题..."
+                  className="w-full resize-none border border-gray-300 rounded-xl px-3 lg:px-4 py-2 lg:py-3 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent shadow-sm transition-all duration-200 min-h-[44px] lg:min-h-[52px] max-h-32 text-gray-900 bg-white placeholder:text-gray-500 text-sm lg:text-base"
+                  rows={1}
+                  disabled={isLoading}
+                  style={{
+                    lineHeight: '1.5',
+                    fontSize: '16px'
+                  }}
+                />
+              </div>
 
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium min-w-[80px] flex items-center justify-center h-[52px]"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                '分析'
-              )}
-            </button>
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim() || isLoading}
+                className="px-4 lg:px-6 py-2 lg:py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium min-w-[60px] lg:min-w-[80px] flex items-center justify-center h-[44px] lg:h-[52px] text-sm lg:text-base"
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  '分析'
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
