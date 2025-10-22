@@ -87,16 +87,33 @@ export default function Sidebar() {
 
   return (
     <SidebarContext.Provider value={{ isOpen, setIsOpen, isMobile }}>
-      {!isOpen&&( <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-[70] p-2 bg-gray-800 text-white rounded-lg shadow-lg"
-        aria-label="打开菜单"
-        title="打开菜单"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>)}
+      {/* 顶部空白容器 */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-[60] bg-transparent pointer-events-none" />
+      
+      {/* 美化的侧边栏按钮 */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="lg:hidden fixed top-4 left-4 z-[70] group"
+          aria-label="打开菜单"
+          title="打开菜单"
+        >
+          <div className="relative p-3 bg-gradient-to-br from-blue-600 to-purple-700 text-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95">
+            {/* 背景光晕效果 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            
+            {/* 按钮内容 */}
+            <div className="relative">
+              <svg className="w-6 h-6 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </div>
+            
+            {/* 装饰性边框 */}
+            <div className="absolute inset-0 rounded-xl border border-white/20 group-hover:border-white/40 transition-colors duration-300" />
+          </div>
+        </button>
+      )}
      
 
       {/* Mobile overlay */}

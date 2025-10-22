@@ -188,7 +188,13 @@ function ZiWei() {
   };
   const firstUserIndex = messages.findIndex(m => m.role === 'user');
   return (
-    <div className="App p-2 sm:p-4 lg:p-8 max-w-8xl w-full mx-auto flex flex-col gap-4 sm:gap-6 lg:gap-6 min-h-screen" style={{ margin: '5px auto', boxShadow: '0 0 25px rgba(0,0,0,0.25)'}}>
+    <>
+      {/* 顶部空白容器 - 高度等于按钮高度，只在手机端显示 */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-[60] bg-transparent pointer-events-none" />
+      
+      <div className="App p-2 sm:p-4 lg:p-8 max-w-8xl w-full mx-auto flex flex-col gap-4 sm:gap-6 lg:gap-6 min-h-screen" style={{ margin: '5px auto', boxShadow: '0 0 25px rgba(0,0,0,0.25)'}}>
+        {/* 手机端顶部空白区域 - 确保内容不被按钮遮挡 */}
+        <div className="lg:hidden h-16 w-full" />
       <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-6">
         {/* 星图区域 */}
         <div className="flex-1 w-full aspect-square lg:max-h-[calc(100vh-20rem)] lg:min-h-[400px] mb-4 sm:mb-6 lg:mb-0">
@@ -335,8 +341,8 @@ function ZiWei() {
         </div>
         </div>
       )}
-    </div>
-    
+      </div>
+    </>
   );
 }
 
