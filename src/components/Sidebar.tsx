@@ -194,13 +194,19 @@ export default function Sidebar() {
           ) : (
             <div className="space-y-2">
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => {
+                  router.push('/login');
+                  setIsOpen(false);
+                }}
                 className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 登录
               </button>
               <button
-                onClick={() => router.push('/register')}
+                onClick={() => {
+                  router.push('/register');
+                  setIsOpen(false);
+                }}
                 className="w-full bg-gray-700 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
               >
                 注册

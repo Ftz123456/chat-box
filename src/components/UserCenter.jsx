@@ -121,7 +121,7 @@ const UserCenter = () => {
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-gray-700 mb-2">请先登录</h2>
-          <p className="text-gray-500 mb-6">登录后即可查看您的个人中心和历史记录</p>
+          <p className="text-gray-500 mb-6">登录后即可查看您的账户中心和历史记录</p>
           <button
             onClick={() => router.push('/login')}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
@@ -155,7 +155,7 @@ const UserCenter = () => {
           {/* 标题区域 */}
           <div className="text-center sm:text-left flex-1">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-              {user ? `欢迎回来，${user.username}` : '用户中心'}
+              {user ? `欢迎回来，${user.username}` : '账户中心'}
             </h2>
             <p className="text-gray-500 text-sm sm:text-base">
               {user?.phone || '探索国学智慧，掌握人生命理'}
