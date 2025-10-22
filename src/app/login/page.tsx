@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,8 +19,16 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
+    // 验证手机号格式
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('请输入有效的11位手机号');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await login(email, password);
+      await login(phone, password);
       router.push('/');
     } catch (err: any) {
       setError(err.message);
@@ -59,19 +67,19 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">
-                邮箱地址
+              <label htmlFor="phone" className="sr-only">
+                手机号
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="邮箱地址"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="手机号"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
             <div>

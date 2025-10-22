@@ -8,7 +8,7 @@ const JWT_EXPIRES_IN = '7d';
 export interface User {
   id: number;
   username: string;
-  email: string;
+  phone: string;
   avatar?: string;
   created_at: Date;
   last_login?: Date;
@@ -16,27 +16,27 @@ export interface User {
 
 export interface RegisterData {
   username: string;
-  email: string;
+  phone: string;
   password: string;
 }
 
 export interface LoginData {
-  email: string;
+  phone: string;
   password: string;
 }
 
 // 注册用户
 export async function registerUser(data: RegisterData): Promise<User> {
-  const { username, email, password } = data;
+  const { username, phone, password } = data;
   
   // 检查用户是否已存在
   const [existingUsers] = await pool.execute(
-    'SELECT id FROM users WHERE email = ? OR username = ?',
-    [email, username]
+    'SELECT id FROM users WHERE phone = ? OR username = ?',
+    [phone, username]
   );
   
   if (Array.isArray(existingUsers) && existingUsers.length > 0) {
-    throw new Error('用户名或邮箱已存在');
+    throw new Error('用户名或手机号已存在');
   }
   
   // 加密密码
@@ -44,8 +44,8 @@ export async function registerUser(data: RegisterData): Promise<User> {
   
   // 插入新用户
   const [result] = await pool.execute(
-    'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-    [username, email, hashedPassword]
+    'INSERT INTO users (username, phone, password) VALUES (?, ?, ?)',
+    [username, phone, hashedPassword]
   );
   
   const insertResult = result as any;
@@ -53,7 +53,7 @@ export async function registerUser(data: RegisterData): Promise<User> {
   
   // 返回用户信息（不包含密码）
   const [users] = await pool.execute(
-    'SELECT id, username, email, avatar, created_at, last_login FROM users WHERE id = ?',
+    'SELECT id, username, phone, avatar, created_at, last_login FROM users WHERE id = ?',
     [userId]
   );
   
@@ -62,12 +62,12 @@ export async function registerUser(data: RegisterData): Promise<User> {
 
 // 用户登录
 export async function loginUser(data: LoginData): Promise<{ user: User; token: string }> {
-  const { email, password } = data;
+  const { phone, password } = data;
   
   // 查找用户
   const [users] = await pool.execute(
-    'SELECT id, username, email, password, avatar, created_at, last_login FROM users WHERE email = ? AND is_active = TRUE',
-    [email]
+    'SELECT id, username, phone, password, avatar, created_at, last_login FROM users WHERE phone = ? AND is_active = TRUE',
+    [phone]
   );
   
   const userList = users as any[];
@@ -91,7 +91,7 @@ export async function loginUser(data: LoginData): Promise<{ user: User; token: s
   
   // 生成JWT token
   const token = jwt.sign(
-    { userId: user.id, email: user.email },
+    { userId: user.id, phone: user.phone },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -130,7 +130,7 @@ export async function verifyToken(token: string): Promise<User | null> {
     
     // 获取用户信息
     const [users] = await pool.execute(
-      'SELECT id, username, email, avatar, created_at, last_login FROM users WHERE id = ? AND is_active = TRUE',
+      'SELECT id, username, phone, avatar, created_at, last_login FROM users WHERE id = ? AND is_active = TRUE',
       [decoded.userId]
     );
     
@@ -152,7 +152,7 @@ export async function logoutUser(token: string): Promise<void> {
 // 获取用户信息
 export async function getUserById(userId: number): Promise<User | null> {
   const [users] = await pool.execute(
-    'SELECT id, username, email, avatar, created_at, last_login FROM users WHERE id = ? AND is_active = TRUE',
+    'SELECT id, username, phone, avatar, created_at, last_login FROM users WHERE id = ? AND is_active = TRUE',
     [userId]
   );
   

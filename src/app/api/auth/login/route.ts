@@ -4,18 +4,27 @@ import { loginUser } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { phone, password } = body;
 
     // 验证输入
-    if (!email || !password) {
+    if (!phone || !password) {
       return NextResponse.json(
-        { error: '邮箱和密码都是必填项' },
+        { error: '手机号和密码都是必填项' },
+        { status: 400 }
+      );
+    }
+
+    // 验证手机号格式
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return NextResponse.json(
+        { error: '手机号格式不正确，请输入有效的11位手机号' },
         { status: 400 }
       );
     }
 
     // 登录用户
-    const { user, token } = await loginUser({ email, password });
+    const { user, token } = await loginUser({ phone, password });
 
     // 设置HTTP-only cookie
     const response = NextResponse.json({
@@ -23,7 +32,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email,
+        phone: user.phone,
         avatar: user.avatar,
         created_at: user.created_at,
         last_login: user.last_login

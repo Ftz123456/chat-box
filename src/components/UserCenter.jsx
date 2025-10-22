@@ -125,46 +125,51 @@ const UserCenter = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="w-full">
       {/* 用户头部区域 */}
-      <div className="flex items-center space-x-4">
-        {/* 用户图标 */}
-        <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white">
-          {user?.avatar ? (
-            <img 
-              src={user.avatar} 
-              alt={user.username} 
-              className="w-12 h-12 rounded-full object-cover"
-            />
-          ) : (
-            <span className="text-lg font-medium">
-              {user?.username?.charAt(0).toUpperCase() || 'U'}
-            </span>
-          )}
-        </div>
-        {/* 标题区域 */}
-        <div>
-          <h2 className="text-xl font-semibold">
-            {user ? `${user.username} 的用户中心` : '用户中心'}
-          </h2>
-          <p className="text-gray-500 text-sm">
-            {user?.email || '探索国学智慧，掌握人生命理'}
-          </p>
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
+          {/* 用户图标 */}
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+            {user?.avatar ? (
+              <img 
+                src={user.avatar} 
+                alt={user.username} 
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-xl sm:text-2xl font-medium">
+                {user?.username?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            )}
+          </div>
+          {/* 标题区域 */}
+          <div className="text-center sm:text-left flex-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
+              {user ? `欢迎回来，${user.username}` : '用户中心'}
+            </h2>
+            <p className="text-gray-500 text-sm sm:text-base">
+              {user?.phone || '探索国学智慧，掌握人生命理'}
+            </p>
+            <div className="mt-2 text-xs text-gray-400">
+              注册时间：{user?.created_at ? new Date(user.created_at).toLocaleDateString('zh-CN') : '未知'}
+            </div>
+          </div>
         </div>
       </div>
       
       {/* 统计卡片区 */}
-      <div className="flex flex-wrap gap-4 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* 咨询次数卡片 */}
-        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
-          <div className="text-blue-500 mb-1">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-center hover:shadow-lg transition-shadow">
+          <div className="text-blue-500 mb-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-6 h-6 mx-auto"
+              className="w-6 h-6 sm:w-8 sm:h-8 mx-auto"
             >
               <path
                 strokeLinecap="round"
@@ -173,20 +178,20 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">{stats.totalConsultations}</div>
-          <div className="text-gray-500 text-sm">咨询次数</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totalConsultations}</div>
+          <div className="text-gray-500 text-xs sm:text-sm">咨询次数</div>
         </div>
         
         {/* 学习进度卡片 */}
-        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
-          <div className="text-blue-500 mb-1">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-center hover:shadow-lg transition-shadow">
+          <div className="text-green-500 mb-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-6 h-6 mx-auto"
+              className="w-6 h-6 sm:w-8 sm:h-8 mx-auto"
             >
               <path
                 strokeLinecap="round"
@@ -195,20 +200,20 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">{stats.learningProgress}%</div>
-          <div className="text-gray-500 text-sm">学习详细资料</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.learningProgress}%</div>
+          <div className="text-gray-500 text-xs sm:text-sm">学习进度</div>
         </div>
         
         {/* 勋章卡片 */}
-        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
-          <div className="text-blue-500 mb-1">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-center hover:shadow-lg transition-shadow">
+          <div className="text-yellow-500 mb-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-6 h-6 mx-auto"
+              className="w-6 h-6 sm:w-8 sm:h-8 mx-auto"
             >
               <path
                 strokeLinecap="round"
@@ -217,20 +222,20 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">{stats.badges}</div>
-          <div className="text-gray-500 text-sm">获得勋章</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.badges}</div>
+          <div className="text-gray-500 text-xs sm:text-sm">获得勋章</div>
         </div>
         
         {/* 会员等级卡片 */}
-        <div className="bg-gray-50 rounded-lg p-4 text-center w-40">
-          <div className="text-blue-500 mb-1">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-center hover:shadow-lg transition-shadow">
+          <div className="text-purple-500 mb-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-6 h-6 mx-auto"
+              className="w-6 h-6 sm:w-8 sm:h-8 mx-auto"
             >
               <path
                 strokeLinecap="round"
@@ -244,63 +249,95 @@ const UserCenter = () => {
               />
             </svg>
           </div>
-          <div className="text-xl font-semibold">{stats.membershipLevel}</div>
-          <div className="text-gray-500 text-sm">会员等级</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.membershipLevel}</div>
+          <div className="text-gray-500 text-xs sm:text-sm">会员等级</div>
         </div>
       </div>
       
       {/* 历史记录区域 */}
-      <div className="mt-6 bg-white rounded-lg p-4 border border-gray-100">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
         {/* 历史记录标题 */}
-        <div className="flex items-center space-x-2 mb-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-5 h-5 text-blue-500"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5 0h.75m0 0h.75m0 0h.75m1.5 0h.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="font-semibold">历史记录</h3>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5 0h.75m0 0h.75m0 0h.75m1.5 0h.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">历史记录</h3>
+          </div>
+          <span className="text-sm text-gray-500">
+            {historyItems.length} 条记录
+          </span>
         </div>
         
         {/* 历史记录列表 */}
-        <div>
+        <div className="space-y-3">
           {loading ? (
-            <div className="text-center py-4">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <p className="text-gray-500 mt-2">加载中...</p>
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <p className="text-gray-500 mt-3">加载中...</p>
             </div>
           ) : historyItems.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>暂无历史记录</p>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-full h-full"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5 0h.75m0 0h.75m0 0h.75m1.5 0h.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-500 text-sm sm:text-base">暂无历史记录</p>
+              <p className="text-gray-400 text-xs mt-1">开始使用易璇AI，记录将在这里显示</p>
             </div>
           ) : (
-            historyItems.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
-                <div>
-                  <h3 className="font-medium">{getChatTypeName(item.chat_type)}</h3>
-                  <p className="text-gray-500 text-sm">
-                    {new Date(item.created_at).toLocaleDateString('zh-CN')}
-                  </p>
+            <div className="grid gap-3">
+              {historyItems.map((item, index) => (
+                <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex-1 mb-3 sm:mb-0">
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">{getChatTypeName(item.chat_type)}</h4>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-1">
+                      {new Date(item.created_at).toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs font-medium">
+                      已完成
+                    </span>
+                    <button 
+                      onClick={() => handleViewHistory(item)}
+                      className="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs sm:text-sm hover:bg-blue-600 transition-colors font-medium"
+                    >
+                      查看详情
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-col space-y-2">
-                  <button 
-                    onClick={() => handleViewHistory(item)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition"
-                  >
-                    查看
-                  </button>
-                  <span className="bg-blue-100 text-blue-500 px-2 py-0.5 rounded text-xs">已完成</span>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </div>

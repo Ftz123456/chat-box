@@ -5,7 +5,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 export interface User {
   id: number;
   username: string;
-  email: string;
+  phone: string;
   avatar?: string;
   created_at: string;
   last_login?: string;
@@ -14,8 +14,8 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  register: (username: string, phone: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -45,13 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (phone: string, password: string) => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ phone, password }),
     });
 
     const data = await response.json();
@@ -63,13 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (username: string, phone: string, password: string) => {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, phone, password }),
     });
 
     const data = await response.json();
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // 注册成功后自动登录
-    await login(email, password);
+    await login(phone, password);
   };
 
   const logout = async () => {

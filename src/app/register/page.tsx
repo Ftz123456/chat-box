@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // 验证手机号格式
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('请输入有效的11位手机号');
+      setLoading(false);
+      return;
+    }
 
     // 验证密码确认
     if (password !== confirmPassword) {
@@ -43,7 +51,7 @@ export default function RegisterPage() {
     }
 
     try {
-      await register(username, email, password);
+      await register(username, phone, password);
       router.push('/');
     } catch (err: any) {
       setError(err.message);
@@ -99,19 +107,19 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                邮箱地址
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                手机号
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入邮箱地址"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="请输入手机号"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
 

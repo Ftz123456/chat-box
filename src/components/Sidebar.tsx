@@ -59,16 +59,23 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // 监听路径变化，更新活动菜单项
+  useEffect(() => {
+    setActiveItem(pathname);
+  }, [pathname]);
+
   const menuItems = [
-    { icon: '💬', label: '对话中心', path: '/' },
-    { icon: '🔮', label: '八字命理', path: '/bazi' },
-    { icon: '⭐', label: '紫微斗数', path: '/ziwei' },
-    { icon: '🎯', label: '梅花易数', path: '/meihua' },
-    { icon: '🚀', label: '专项驱动', path: '/kaoyan' },
-    { icon: '👁️', label: '易学理论', path: '/theory' },
-    { icon: '🛍️', label: '开运物品', path: '/products' },
-    { icon: '💬', label: '交流反馈', path: '/feedback' },
-    { icon: '👤', label: '账户中心', path: '/account' }
+    { icon: '💬', label: '对话中心', path: '/', exact: true },
+    { icon: '🔮', label: '八字命理', path: '/bazi', exact: true },
+    { icon: '⭐', label: '紫微斗数', path: '/ziwei', exact: true },
+    { icon: '🎯', label: '梅花易数', path: '/meihua', exact: true },
+    { icon: '📚', label: '马克思主义分析', path: '/marxist-analysis', exact: true },
+    { icon: '🌿', label: '中医咨询', path: '/chat', exact: false },
+    { icon: '🚀', label: '专项驱动', path: '/kaoyan', exact: true },
+    { icon: '👁️', label: '易学理论', path: '/theory', exact: true },
+    { icon: '🛍️', label: '开运物品', path: '/products', exact: true },
+    { icon: '💬', label: '交流反馈', path: '/feedback', exact: true },
+    { icon: '👤', label: '账户中心', path: '/account', exact: true }
   ];
 
   const handleMenuClick = (path: string) => {
@@ -140,16 +147,23 @@ export default function Sidebar() {
 
         {/* Navigation Menu */}
         <nav className="p-4 space-y-2 overflow-y-auto h-full pb-20">
-          {menuItems.map((item, index) => (
-            <MenuItem
-              key={index}
-              icon={item.icon}
-              label={item.label}
-              path={item.path}
-              isActive={activeItem === item.path}
-              onClick={() => handleMenuClick(item.path)}
-            />
-          ))}
+          {menuItems.map((item, index) => {
+            // 判断菜单项是否激活
+            const isActive = item.exact 
+              ? activeItem === item.path 
+              : activeItem.startsWith(item.path);
+            
+            return (
+              <MenuItem
+                key={index}
+                icon={item.icon}
+                label={item.label}
+                path={item.path}
+                isActive={isActive}
+                onClick={() => handleMenuClick(item.path)}
+              />
+            );
+          })}
         </nav>
 
         {/* User Info Section */}
@@ -166,7 +180,7 @@ export default function Sidebar() {
                   {user.username}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  {user.email}
+                  {user.phone}
                 </p>
               </div>
               <button
