@@ -65,8 +65,8 @@ const UserCenter = () => {
   // 跳转到对应的聊天页面并显示历史记录
   const handleViewHistory = (item) => {
     const pathMap = {
-      'digital': '/?type=digital',
-      'comprehensive': '/?type=comprehensive', 
+      'digital': '/',
+      'comprehensive': '/', 
       'bazi': '/bazi',
       'ziwei': '/ziwei',
       'marxist': '/marxist-analysis',
@@ -74,7 +74,16 @@ const UserCenter = () => {
     };
     
     const path = pathMap[item.chat_type] || '/';
-    router.push(`${path}?conversationId=${item.id}`);
+    
+    // 构建正确的URL参数
+    let url = path;
+    if (item.chat_type === 'digital' || item.chat_type === 'comprehensive') {
+      url += `?type=${item.chat_type}&conversationId=${item.id}`;
+    } else {
+      url += `?conversationId=${item.id}`;
+    }
+    
+    router.push(url);
   };
 
   // 获取聊天类型的中文显示名称

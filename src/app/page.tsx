@@ -69,13 +69,14 @@ export default function Home() {
     setIsLoadingHistory(true);
     try {
       const response = await fetch(`/api/user/history/${conversationId}`);
+      
       if (response.ok) {
         const data = await response.json();
         const messages = data.messages.map((msg: any, index: number) => ({
           id: `${msg.role}-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           role: msg.role,
           content: msg.content,
-          timestamp: Date.now()
+          timestamp: msg.timestamp || Date.now()
         }));
         
         // 先设置消息，再设置聊天类型，确保状态同步
@@ -99,8 +100,23 @@ export default function Home() {
   // 加载历史记录
   useEffect(() => {
     const conversationId = searchParams.get('conversationId');
-    if (conversationId) {
-      loadHistoryConversation(conversationId);
+    
+    // 如果conversationId为空，尝试从type参数中提取
+    let actualConversationId = conversationId;
+    if (!actualConversationId) {
+      const typeParam = searchParams.get('type');
+      
+      if (typeParam && typeParam.includes('conversationId=')) {
+        // 从type参数中提取conversationId
+        const match = typeParam.match(/conversationId=(\d+)/);
+        if (match) {
+          actualConversationId = match[1];
+        }
+      }
+    }
+    
+    if (actualConversationId) {
+      loadHistoryConversation(actualConversationId);
     }
   }, [searchParams, loadHistoryConversation]);
 
@@ -408,8 +424,20 @@ export default function Home() {
               )}
          
 
+              {/* 历史记录加载状态 */}
+              {isLoadingHistory && (
+                <div className="flex justify-center animate-fade-in">
+                  <div className="bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-gray-600">正在加载历史记录...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 消息列表 */}
-              {!showOptionCards && currentMessages.map((message) => (
+              {!showOptionCards && !isLoadingHistory && currentMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
