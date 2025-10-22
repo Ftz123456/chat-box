@@ -2,7 +2,7 @@
 
 import OptionCard from '@/components/OptionCard';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -47,6 +47,7 @@ const createMessage = (role: Message['role'], content: string): Message => ({
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const [chatType, setChatType] = useState<'digital' | 'comprehensive'>('digital');
   const [messagesByType, setMessagesByType] = useState<Record<string, Message[]>>({
@@ -57,11 +58,51 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [showOptionCards, setShowOptionCards] = useState(true);
   const [initialPrompt, setInitialPrompt] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentAssistantMessageId = useRef<string | null>(null);
   const queueRef = useRef<string[]>([]);
 
   const hasMessages = messagesByType[chatType].length > 0;
+
+  const loadHistoryConversation = useCallback(async (conversationId: string) => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(`/api/user/history/${conversationId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const messages = data.messages.map((msg: any, index: number) => ({
+          id: `${msg.role}-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          role: msg.role,
+          content: msg.content,
+          timestamp: Date.now()
+        }));
+        
+        // 先设置消息，再设置聊天类型，确保状态同步
+        setMessagesByType(prev => ({
+          ...prev,
+          [data.chat_type]: messages
+        }));
+        
+        // 立即设置聊天类型，不使用setTimeout
+        setChatType(data.chat_type);
+        setShowOptionCards(false);
+        setInitialPrompt(false);
+      }
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  // 加载历史记录
+  useEffect(() => {
+    const conversationId = searchParams.get('conversationId');
+    if (conversationId) {
+      loadHistoryConversation(conversationId);
+    }
+  }, [searchParams, loadHistoryConversation]);
 
   // 返回按钮处理函数
   const handleBackToOptions = () => {

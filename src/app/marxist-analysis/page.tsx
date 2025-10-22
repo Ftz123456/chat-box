@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useSidebar } from '@/components/Sidebar';
@@ -26,11 +26,40 @@ const DEFAULT_PROMPTS = [
 
 export default function MarxistAnalysis() {
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  const loadHistoryConversation = useCallback(async (conversationId: string) => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(`/api/user/history/${conversationId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const historyMessages = data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
+        }));
+        setMessages(historyMessages);
+      }
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  // 加载历史记录
+  useEffect(() => {
+    const conversationId = searchParams.get('conversationId');
+    if (conversationId) {
+      loadHistoryConversation(conversationId);
+    }
+  }, [searchParams, loadHistoryConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

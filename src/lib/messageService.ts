@@ -13,18 +13,26 @@ export interface SaveMessageParams {
   content: string;
 }
 
+export interface Conversation {
+  id: number;
+  user_id: number;
+  chat_type: string;
+  title: string;
+  messages: Message[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ChatHistoryItem {
   id: number;
   chat_type: string;
-  first_message: string;
-  last_message: string;
+  title: string;
   message_count: number;
-  latest_id: number;
   created_at: string;
+  updated_at: string;
 }
 
 export interface ChatMessage {
-  id: number;
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
@@ -57,16 +65,83 @@ export class MessageService {
   }
 
   /**
-   * 保存单条消息到数据库
+   * 保存或更新对话到数据库
+   */
+  static async saveConversation(userId: number, chatType: string, messages: Message[]): Promise<number> {
+    try {
+      // 生成对话标题
+      const firstUserMessage = messages.find(msg => msg.role === 'user');
+      const title = firstUserMessage 
+        ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+        : `${chatType}对话`;
+
+      // 检查是否已存在该用户的该类型对话
+      const [existing] = await pool.execute(
+        'SELECT id FROM conversations WHERE user_id = ? AND chat_type = ? ORDER BY updated_at DESC LIMIT 1',
+        [userId, chatType]
+      );
+
+      if (Array.isArray(existing) && existing.length > 0) {
+        // 更新现有对话
+        const conversationId = (existing as any[])[0].id;
+        await pool.execute(
+          'UPDATE conversations SET messages = ?, title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [JSON.stringify(messages), title, conversationId]
+        );
+        return conversationId;
+      } else {
+        // 创建新对话
+        const [result] = await pool.execute(
+          'INSERT INTO conversations (user_id, chat_type, title, messages) VALUES (?, ?, ?, ?)',
+          [userId, chatType, title, JSON.stringify(messages)]
+        );
+        return (result as any).insertId;
+      }
+    } catch (error) {
+      console.error('保存对话失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 保存单条消息到数据库（兼容旧接口）
    */
   static async saveMessage(params: SaveMessageParams): Promise<number> {
     try {
-      const [result] = await pool.execute(
-        'INSERT INTO chat_messages (user_id, chat_type, role, content) VALUES (?, ?, ?, ?)',
-        [params.userId, params.chatType, params.role, params.content]
+      // 获取或创建当前对话
+      const [existing] = await pool.execute(
+        'SELECT id, messages FROM conversations WHERE user_id = ? AND chat_type = ? ORDER BY updated_at DESC LIMIT 1',
+        [params.userId, params.chatType]
       );
+
+      let messages: Message[] = [];
+      let conversationId: number;
+
+      if (Array.isArray(existing) && existing.length > 0) {
+        // 更新现有对话
+        const conversation = (existing as any[])[0];
+        conversationId = conversation.id;
+        // MySQL JSON字段已经自动解析为JavaScript对象，不需要JSON.parse
+        messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+      } else {
+        // 创建新对话
+        const [result] = await pool.execute(
+          'INSERT INTO conversations (user_id, chat_type, title, messages) VALUES (?, ?, ?, ?)',
+          [params.userId, params.chatType, '新对话', JSON.stringify([])]
+        );
+        conversationId = (result as any).insertId;
+      }
+
+      // 添加新消息
+      messages.push({
+        role: params.role,
+        content: params.content
+      });
+
+      // 更新对话
+      await this.saveConversation(params.userId, params.chatType, messages);
       
-      return (result as any).insertId;
+      return conversationId;
     } catch (error) {
       console.error('保存消息失败:', error);
       throw error;
@@ -87,22 +162,8 @@ export class MessageService {
         return;
       }
 
-      // 准备批量插入数据
-      const values = validMessages.map(msg => [
-        userId,
-        chatType,
-        msg.role,
-        msg.content
-      ]);
-
-      // 批量插入
-      const placeholders = values.map(() => '(?, ?, ?, ?)').join(', ');
-      const flatValues = values.flat();
-
-      await pool.execute(
-        `INSERT INTO chat_messages (user_id, chat_type, role, content) VALUES ${placeholders}`,
-        flatValues
-      );
+      // 使用新的对话保存方法
+      await this.saveConversation(userId, chatType, validMessages);
     } catch (error) {
       console.error('批量保存消息失败:', error);
       throw error;
@@ -110,32 +171,31 @@ export class MessageService {
   }
 
   /**
-   * 获取用户的历史记录列表（按聊天类型分组）
+   * 获取用户的历史记录列表
    */
   static async getUserHistory(userId: number): Promise<ChatHistoryItem[]> {
     try {
       const [history] = await pool.execute(`
         SELECT 
+          id,
           chat_type,
-          MIN(created_at) as first_message,
-          MAX(created_at) as last_message,
-          COUNT(*) as message_count,
-          SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT id ORDER BY created_at DESC), ',', 1) as latest_id
-        FROM chat_messages 
+          title,
+          JSON_LENGTH(messages) as message_count,
+          created_at,
+          updated_at
+        FROM conversations 
         WHERE user_id = ? 
-        GROUP BY chat_type 
-        ORDER BY last_message DESC
+        ORDER BY updated_at DESC
         LIMIT 20
       `, [userId]);
 
       return (history as any[]).map(item => ({
-        id: parseInt(item.latest_id),
+        id: item.id,
         chat_type: item.chat_type,
-        first_message: item.first_message,
-        last_message: item.last_message,
+        title: item.title,
         message_count: item.message_count,
-        latest_id: parseInt(item.latest_id),
-        created_at: item.last_message
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
     } catch (error) {
       console.error('获取用户历史记录失败:', error);
@@ -148,34 +208,56 @@ export class MessageService {
    */
   static async getHistoryMessages(userId: number, historyId: number): Promise<ChatMessage[]> {
     try {
-      // 首先获取该历史记录的基本信息
-      const [historyInfo] = await pool.execute(
-        'SELECT chat_type FROM chat_messages WHERE id = ? AND user_id = ?',
+      // 获取对话记录
+      const [conversation] = await pool.execute(
+        'SELECT messages FROM conversations WHERE id = ? AND user_id = ?',
         [historyId, userId]
       );
 
-      if ((historyInfo as any[]).length === 0) {
+      if ((conversation as any[]).length === 0) {
         throw new Error('历史记录不存在或无权限访问');
       }
 
-      const chatType = (historyInfo as any[])[0].chat_type;
-
-      // 获取该聊天类型的所有消息
-      const [messages] = await pool.execute(`
-        SELECT id, role, content, created_at
-        FROM chat_messages 
-        WHERE user_id = ? AND chat_type = ?
-        ORDER BY created_at ASC
-      `, [userId, chatType]);
-
-      return (messages as any[]).map(msg => ({
-        id: msg.id,
+      // MySQL JSON字段已经自动解析为JavaScript对象
+      const messages = (conversation as any[])[0].messages;
+      
+      return messages.map((msg: any) => ({
         role: msg.role,
         content: msg.content,
         created_at: msg.created_at
       }));
     } catch (error) {
       console.error('获取历史记录消息失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取特定对话的完整信息
+   */
+  static async getConversation(userId: number, conversationId: number): Promise<Conversation | null> {
+    try {
+      const [conversation] = await pool.execute(
+        'SELECT * FROM conversations WHERE id = ? AND user_id = ?',
+        [conversationId, userId]
+      );
+
+      if ((conversation as any[]).length === 0) {
+        return null;
+      }
+
+      const conv = (conversation as any[])[0];
+      return {
+        id: conv.id,
+        user_id: conv.user_id,
+        chat_type: conv.chat_type,
+        title: conv.title,
+        messages: conv.messages, // MySQL JSON字段已经自动解析
+        created_at: conv.created_at,
+        updated_at: conv.updated_at
+      };
+    } catch (error) {
+      console.error('获取对话失败:', error);
       throw error;
     }
   }
@@ -190,16 +272,16 @@ export class MessageService {
     membershipLevel: string;
   }> {
     try {
-      // 获取总咨询次数
+      // 获取总咨询次数（对话数量）
       const [consultationResult] = await pool.execute(
-        'SELECT COUNT(DISTINCT chat_type) as total FROM chat_messages WHERE user_id = ?',
+        'SELECT COUNT(*) as total FROM conversations WHERE user_id = ?',
         [userId]
       );
       const totalConsultations = (consultationResult as any[])[0]?.total || 0;
 
       // 获取学习进度（基于消息数量）
       const [messageResult] = await pool.execute(
-        'SELECT COUNT(*) as total FROM chat_messages WHERE user_id = ?',
+        'SELECT SUM(JSON_LENGTH(messages)) as total FROM conversations WHERE user_id = ?',
         [userId]
       );
       const messageCount = (messageResult as any[])[0]?.total || 0;
@@ -207,7 +289,7 @@ export class MessageService {
 
       // 获取勋章数量（基于不同聊天类型的使用）
       const [badgeResult] = await pool.execute(
-        'SELECT COUNT(DISTINCT chat_type) as badges FROM chat_messages WHERE user_id = ?',
+        'SELECT COUNT(DISTINCT chat_type) as badges FROM conversations WHERE user_id = ?',
         [userId]
       );
       const badges = (badgeResult as any[])[0]?.badges || 0;

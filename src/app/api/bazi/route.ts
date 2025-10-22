@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
             if (lastUserMessage) {
               await MessageService.saveMessage({
                 userId,
-                chatType: 'zhongyi',
+                chatType: 'bazi',
                 role: 'user',
                 content: lastUserMessage.content
               });
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
             // 保存助手回复
             await MessageService.saveMessage({
               userId,
-              chatType: 'zhongyi',
+              chatType: 'bazi',
               role: 'assistant',
               content: responseData.output.text
             });

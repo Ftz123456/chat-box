@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,13 +13,42 @@ interface Message {
 
 function BaziMain() {
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const contentWrapperRef = useRef<HTMLDivElement>(null);
   
+
+  const loadHistoryConversation = useCallback(async (conversationId: string) => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(`/api/user/history/${conversationId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const historyMessages = data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
+        }));
+        setMessages(historyMessages);
+      }
+    } catch (error) {
+      console.error('加载历史记录失败:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  // 加载历史记录
+  useEffect(() => {
+    const conversationId = searchParams.get('conversationId');
+    if (conversationId) {
+      loadHistoryConversation(conversationId);
+    }
+  }, [searchParams, loadHistoryConversation]);
 
   // 自动滚动到最新消息
   useEffect(() => {
@@ -37,7 +66,7 @@ function BaziMain() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/zhongyiChat', {
+      const response = await fetch('/api/bazi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

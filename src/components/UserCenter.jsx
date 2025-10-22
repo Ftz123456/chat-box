@@ -74,7 +74,7 @@ const UserCenter = () => {
     };
     
     const path = pathMap[item.chat_type] || '/';
-    router.push(`${path}?historyId=${item.id}`);
+    router.push(`${path}?conversationId=${item.id}`);
   };
 
   // 获取聊天类型的中文显示名称
@@ -313,9 +313,9 @@ const UserCenter = () => {
               {historyItems.map((item, index) => (
                 <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex-1 mb-3 sm:mb-0">
-                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">{getChatTypeName(item.chat_type)}</h4>
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">{item.title || getChatTypeName(item.chat_type)}</h4>
                     <p className="text-gray-500 text-xs sm:text-sm mt-1">
-                      {new Date(item.created_at).toLocaleDateString('zh-CN', {
+                      {getChatTypeName(item.chat_type)} • {item.message_count} 条消息 • {new Date(item.updated_at || item.created_at).toLocaleDateString('zh-CN', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
