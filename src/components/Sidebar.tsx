@@ -87,8 +87,7 @@ export default function Sidebar() {
 
   return (
     <SidebarContext.Provider value={{ isOpen, setIsOpen, isMobile }}>
-      {/* Mobile menu button */}
-      <button
+      {!isOpen&&( <button
         onClick={() => setIsOpen(!isOpen)}
         className="lg:hidden fixed top-4 left-4 z-[70] p-2 bg-gray-800 text-white rounded-lg shadow-lg"
         aria-label="打开菜单"
@@ -97,7 +96,8 @@ export default function Sidebar() {
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
-      </button>
+      </button>)}
+     
 
       {/* Mobile overlay */}
       {isOpen && (

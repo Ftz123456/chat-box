@@ -15,9 +15,9 @@ export default function NotFound() {
       <div className="max-w-2xl mx-auto px-6 text-center">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 md:p-12">
           {/* Logo */}
-          <div className="inline-flex items-center justify-center w-20 h-20 mb-6 shadow-lg rounded-full overflow-hidden bg-white">
+          <div className="inline-flex items-center justify-center w-30 h-30 mb-6 shadow-lg rounded-full overflow-hidden bg-white">
             <Image
-              src="/logo.png"
+              src="/log.png"
               alt="易旅AI"
               width={80}
               height={80}
@@ -65,7 +65,7 @@ export default function NotFound() {
           {/* Decorative Elements */}
           <div className="mt-8 pt-6 border-t border-gray-100">
             <p className="text-sm text-gray-500">
-              🔮 易旅AI - 智能占卜助手
+              🔮 易璇AI - 智能占卜助手
             </p>
           </div>
         </div>
