@@ -69,6 +69,8 @@ export default function Sidebar() {
     { icon: '🔮', label: '八字命理', path: '/bazi', exact: true },
     { icon: '⭐', label: '紫微斗数', path: '/ziwei', exact: true },
     { icon: '🎯', label: '梅花易数', path: '/meihua', exact: true },
+    { icon: '📚', label: '马克思主义分析', path: '/marxist-analysis', exact: true },
+    { icon: '🌿', label: '中医咨询', path: '/chat', exact: false },
     { icon: '🚀', label: '专项驱动', path: '/kaoyan', exact: true },
     { icon: '👁️', label: '易学理论', path: '/theory', exact: true },
     { icon: '🛍️', label: '开运物品', path: '/products', exact: true },
