@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -24,7 +24,7 @@ const DEFAULT_PROMPTS = [
 我将从马克思主义的角度为您提供深入的理论分析和实践指导。`,
 ];
 
-export default function MarxistAnalysis() {
+function MarxistAnalysisContent() {
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -284,5 +284,21 @@ export default function MarxistAnalysis() {
         </div>
       )}
     </div>
+  );
+}
+
+// 主组件，用 Suspense 包装
+export default function MarxistAnalysis() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <MarxistAnalysisContent />
+    </Suspense>
   );
 }

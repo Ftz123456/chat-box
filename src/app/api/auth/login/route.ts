@@ -39,14 +39,22 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 设置cookie
-    response.cookies.set('auth-token', token, {
+    // 设置cookie - 简化配置以确保兼容性
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isHttps = process.env.NEXT_PUBLIC_HTTPS === 'true';
+    
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction && isHttps, // 只有在生产环境且明确启用HTTPS时才使用secure
+      sameSite: 'lax' as const,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7天
-      path: '/'
-    });
+      path: '/',
+      domain: process.env.NODE_ENV === 'production' ? undefined : undefined // 让浏览器自动处理域名
+    };
+    
+    console.log('Environment:', { isProduction, isHttps, NODE_ENV: process.env.NODE_ENV });
+    console.log('Setting cookie with options:', cookieOptions);
+    response.cookies.set('auth-token', token, cookieOptions);
 
     return response;
 

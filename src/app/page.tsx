@@ -1,7 +1,7 @@
 'use client';
 
 import OptionCard from '@/components/OptionCard';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -45,7 +45,8 @@ const createMessage = (role: Message['role'], content: string): Message => ({
   timestamp: Date.now()
 });
 
-export default function Home() {
+// 使用 useSearchParams 的组件
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
@@ -573,5 +574,21 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+// 主组件，用 Suspense 包装
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -15,7 +15,7 @@ interface Message {
 }
 
 
-function ZiWei() {
+function ZiWeiContent() {
   const { isOpen: isSidebarOpen, isMobile } = useSidebar();
   const searchParams = useSearchParams();
   const [dateType, setDateType] = useState<'solar' | 'lunar'>('solar');
@@ -346,7 +346,18 @@ function ZiWei() {
   );
 }
 
-
-
-
-export default ZiWei;
+// 主组件，用 Suspense 包装
+export default function ZiWei() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <ZiWeiContent />
+    </Suspense>
+  );
+}

@@ -2,15 +2,17 @@ import mysql from 'mysql2/promise';
 
 // 数据库配置
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || 'rm-cn-w5g4hprkj0004vno.rwlb.rds.aliyuncs.com',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '123456',
+  password: process.env.DB_PASSWORD || '13718655218fF@',
   database: process.env.DB_NAME || 'chat_box',
   port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
 };
+
+console.log(dbConfig);
 
 // 创建连接池
 const pool = mysql.createPool(dbConfig);

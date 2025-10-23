@@ -33,19 +33,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
+      console.log('Checking auth status...');
       const response = await fetch('/api/auth/me');
+      console.log('Auth status response:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('User data received:', data.user);
         setUser(data.user);
+        
+        // 同步到localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+      } else {
+        const errorData = await response.json();
+        console.log('Auth check failed:', errorData);
+        
+        // 如果API失败，尝试从localStorage恢复用户状态
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              console.log('Restoring user from localStorage:', user);
+              setUser(user);
+            } catch (e) {
+              console.error('Failed to parse stored user:', e);
+              localStorage.removeItem('user');
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('检查登录状态失败:', error);
+      
+      // 如果网络错误，尝试从localStorage恢复
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            console.log('Restoring user from localStorage after error:', user);
+            setUser(user);
+          } catch (e) {
+            console.error('Failed to parse stored user:', e);
+            localStorage.removeItem('user');
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (phone: string, password: string) => {
+    console.log('Attempting login for phone:', phone);
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
@@ -55,12 +108,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const data = await response.json();
+    console.log('Login response:', response.status, data);
 
     if (!response.ok) {
       throw new Error(data.error || '登录失败');
     }
 
+    console.log('Login successful, setting user:', data.user);
     setUser(data.user);
+    
+    // 作为备用方案，也将用户信息存储到localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
   };
 
   const register = async (username: string, phone: string, password: string) => {
@@ -91,6 +151,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('登出请求失败:', error);
     } finally {
       setUser(null);
+      // 清理localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+      }
     }
   };
 
