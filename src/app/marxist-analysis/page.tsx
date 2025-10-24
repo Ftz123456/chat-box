@@ -249,7 +249,7 @@ function MarxistAnalysisContent() {
 
       {/* Input Area - 在移动端侧边栏打开时隐藏 */}
       {!(isMobile && isSidebarOpen) && (
-        <div className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 lg:right-64 z-30 relative">
+        <div className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 z-30">
           <div className="max-w-6xl mx-auto px-4 lg:px-8">
             <div className="flex space-x-2 lg:space-x-4 items-end">
               <div className="flex-1 max-w-2xl">

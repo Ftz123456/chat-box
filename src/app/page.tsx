@@ -328,13 +328,13 @@ function HomeContent() {
         {/* Header */}
          {showOptionCards && (
         <div className="bg-white shadow-sm border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
+          <div className="max-w-6xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
             <div className="flex items-center justify-between">
               <div className="flex-1">
               </div>
               {/* 标题区域 */}
               <div className="flex-1 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 lg:w-24 lg:h-24 mb-4 lg:mb-6 shadow-lg rounded-full overflow-hidden bg-white">
+                <div className="inline-flex items-center justify-center w-20 h-20 lg:w-28 lg:h-28 mb-6 lg:mb-8 shadow-lg rounded-full overflow-hidden bg-white">
                   <Image
                     src="/log.png"
                     alt="易璇AI"
@@ -343,8 +343,8 @@ function HomeContent() {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <h1 className="text-2xl lg:text-4xl font-bold text-gray-800 mb-2 lg:mb-4">欢迎使用易璇AI</h1>
-                <p className="text-lg lg:text-xl text-gray-600">
+                <h1 className="text-3xl lg:text-5xl font-bold text-gray-800 mb-4 lg:mb-6">欢迎使用易璇AI</h1>
+                <p className="text-xl lg:text-2xl text-gray-600 mb-8 lg:mb-12">
                   {showOptionCards ? '请选择您的起卦方式' : `${chatType === 'digital' ? '数字起卦' : '综合起卦'}`}
                 </p>
               </div>
@@ -353,7 +353,7 @@ function HomeContent() {
               
             </div>
            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-8 max-w-4xl mx-auto mb-8 lg:mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-12 max-w-5xl mx-auto mb-8 lg:mb-16">
               <OptionCard
                 title="数字起卦"
                 subtitle="通过三个数字起卦"
@@ -524,7 +524,7 @@ function HomeContent() {
       {/* Input Area - 在移动端侧边栏打开时隐藏 */}
       {!(isMobile && isSidebarOpen) && (
         <div 
-          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-0 lg:right-0 z-30 relative"
+          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 z-30"
           style={{ 
             boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
             boxSizing: 'border-box'

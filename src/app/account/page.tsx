@@ -10,13 +10,13 @@ const UserCenterPage = () => {
       <div className="max-w-6xl mx-auto">
         {/* 页面头部 */}
         <div className="text-center mb-8">
-          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-white shadow-lg mb-4">
+          <div className="w-12 h-12 lg:w-24 lg:h-24 rounded-full overflow-hidden bg-white flex items-center justify-center mx-auto mb-4">
             <Image
               src="/log.png"
               alt="易璇AI"
-              width={48}
-              height={48}
-              className="w-12 h-12 object-contain"
+              width={80}
+              height={80}
+              className="w-full h-full object-contain"
             />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">

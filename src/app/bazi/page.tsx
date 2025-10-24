@@ -113,14 +113,14 @@ function BaziMain() {
       {/* 内容区域 - 独立滚动容器 */}
       <div 
         ref={contentWrapperRef}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto pb-32 lg:pb-32"
         style={{ 
           padding: '16px lg:24px',
           maxHeight: 'calc(100vh - 130px)', // 精确计算高度，避开输入框
           boxSizing: 'border-box'
         }}
       >
-        <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6">
+        <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6">
           {messages.length === 0 ? (
             <BaziPrompt />
           ) : (
@@ -189,10 +189,10 @@ function BaziMain() {
       {/* 输入区域 - 在移动端侧边栏打开时隐藏 */}
       {!(isMobile && isSidebarOpen) && (
         <div 
-          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-0 lg:right-0 z-30 relative"
+          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 z-30"
           style={{ 
             boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
-            boxSizing: 'border-box' // 确保padding不影响宽度
+            boxSizing: 'border-box'
           }}
         >
         {/* 与内容区域严格对齐 */}
@@ -233,14 +233,10 @@ function BaziMain() {
 function BaziPrompt() {
   return (
     <div className="bg-white rounded-xl shadow-md p-4 lg:p-8 xl:p-10">
-       {/* Header */}
-    <div className="bg-white shadow-sm border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4 lg:py-8">
-        <div className="text-center">
-          <h1 className="text-2xl lg:text-4xl font-bold text-gray-800 mb-2 lg:mb-4">八字命理说明</h1>
-        </div>
+      {/* 标题 */}
+      <div className="text-center mb-6 lg:mb-8">
+        <h1 className="text-2xl lg:text-4xl font-bold text-gray-800 mb-2 lg:mb-4">八字命理说明</h1>
       </div>
-    </div>
 
       {/* 引言部分 */}
         <div className="mb-6 lg:mb-8">
@@ -251,7 +247,7 @@ function BaziPrompt() {
 
         {/* 核心功能部分 */}
         <div className="mb-6 lg:mb-8">
-          <h2 className="text-xl lg:text-2xl font-semibold text-gray-800 mb-3 lg:mb-4 pb-2 border-b border-gray-200">
+          <h2 className="text-xl lg:text-2xl font-semibold text-gray-800 mb-3 lg:mb-4">
             1. 核心功能
           </h2>
           <ul className="space-y-2 lg:space-y-3 text-sm lg:text-base text-gray-700">
@@ -265,28 +261,25 @@ function BaziPrompt() {
 
       {/* 使用方法部分 */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
           2. 使用方法
         </h2>
-        <ol className="space-y-4 text-gray-700">
-          <li className="flex items-start">
-            <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">①</span>
-            <span>提供生辰信息(年月日时+出生地+性别，例如1999年6月28日11时33分四川省成都市 男)</span>
+        <ul className="space-y-4 text-gray-700">
+          <li className="bg-gray-50 p-4 rounded-lg">
+            <span className="font-medium text-gray-800">① 提供生辰信息</span>(年月日时+出生地+性别，例如1999年6月28日11时33分四川省成都市 男)
           </li>
-          <li className="flex items-start">
-            <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">②</span>
-            <span>描述具体困惑/问题场景。</span>
+          <li className="bg-gray-50 p-4 rounded-lg">
+            <span className="font-medium text-gray-800">② 描述具体困惑/问题场景</span>。
           </li>
-          <li className="flex items-start">
-            <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">③</span>
-            <span>我们会分三步走:先分析命理特征-再用辩证法剖析矛盾-最后给出《实践论》式解决方案。</span>
+          <li className="bg-gray-50 p-4 rounded-lg">
+            <span className="font-medium text-gray-800">③ 我们会分三步走</span>:先分析命理特征-再用辩证法剖析矛盾-最后给出《实践论》式解决方案。
           </li>
-        </ol>
+        </ul>
       </div>
 
       {/* 典型问题部分 */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
           3. 典型问题
         </h2>
         <ul className="space-y-4 text-gray-700">
@@ -304,7 +297,7 @@ function BaziPrompt() {
 
       {/* 注意事项部分 */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
           4. 注意事项
         </h2>
         <div className="bg-red-50 border-l-4 border-red-400 p-4 text-gray-700">
