@@ -4,6 +4,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useSidebar } from '@/components/Sidebar';
+import BaziForm, { BaziFormData } from '@/components/BaziForm';
+import BaziTable from '@/components/BaziTable';
 
 import { astro } from "iztro";
 interface Message {
@@ -18,6 +20,7 @@ function BaziMain() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [baziData, setBaziData] = useState<BaziFormData | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const contentWrapperRef = useRef<HTMLDivElement>(null);
@@ -108,6 +111,10 @@ function BaziMain() {
     }
   };
 
+  const handleBaziSubmit = (data: BaziFormData) => {
+    setBaziData(data);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
       {/* 内容区域 - 独立滚动容器 */}
@@ -121,6 +128,10 @@ function BaziMain() {
         }}
       >
         <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6">
+          {/* 八字表单和表格 */}
+          <BaziForm onSubmit={handleBaziSubmit} />
+          {baziData && <BaziTable formData={baziData} />}
+          
           {messages.length === 0 ? (
             <BaziPrompt />
           ) : (
