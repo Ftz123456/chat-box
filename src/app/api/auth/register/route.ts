@@ -4,7 +4,7 @@ import { registerUser } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, phone, password } = body;
+    const { username, phone, password, birthday } = body;
 
     // 验证输入
     if (!username || !phone || !password) {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 注册用户
-    const user = await registerUser({ username, phone, password });
+    const user = await registerUser({ username, phone, password, birthday: birthday || null });
 
     return NextResponse.json({
       message: '注册成功',
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
         username: user.username,
         phone: user.phone,
         avatar: user.avatar,
-        created_at: user.created_at
+        created_at: user.created_at,
+        birthday: (user as any).birthday || null
       }
     });
 

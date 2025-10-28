@@ -18,6 +18,7 @@ export interface RegisterData {
   username: string;
   phone: string;
   password: string;
+  birthday?: string | null; // ISO string optional
 }
 
 export interface LoginData {
@@ -27,7 +28,7 @@ export interface LoginData {
 
 // 注册用户
 export async function registerUser(data: RegisterData): Promise<User> {
-  const { username, phone, password } = data;
+  const { username, phone, password, birthday } = data;
   
   // 检查用户是否已存在
   const [existingUsers] = await pool.execute(
@@ -43,9 +44,11 @@ export async function registerUser(data: RegisterData): Promise<User> {
   const hashedPassword = await bcrypt.hash(password, 12);
   
   // 插入新用户
+  const birthdayValue = birthday ? new Date(birthday) : null;
+  
   const [result] = await pool.execute(
-    'INSERT INTO users (username, phone, password) VALUES (?, ?, ?)',
-    [username, phone, hashedPassword]
+    'INSERT INTO users (username, phone, password, birthday) VALUES (?, ?, ?, ?)',
+    [username, phone, hashedPassword, birthdayValue]
   );
   
   const insertResult = result as any;
@@ -53,7 +56,7 @@ export async function registerUser(data: RegisterData): Promise<User> {
   
   // 返回用户信息（不包含密码）
   const [users] = await pool.execute(
-    'SELECT id, username, phone, avatar, created_at, last_login FROM users WHERE id = ?',
+    'SELECT id, username, phone, avatar, created_at, last_login, birthday FROM users WHERE id = ?',
     [userId]
   );
   

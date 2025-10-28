@@ -9,6 +9,7 @@ import Image from 'next/image';
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [birthday, setBirthday] = useState(''); // 使用 datetime-local 格式: YYYY-MM-DDTHH:mm
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,8 +51,18 @@ export default function RegisterPage() {
       return;
     }
 
+    // 验证生日是否填写
+    if (!birthday) {
+      setError('请填写生日信息');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await register(username, phone, password);
+      // datetime-local 的值已经是本地时间格式，直接转换为 ISO 字符串
+      const birthdayIso = new Date(birthday).toISOString();
+
+      await register(username, phone, password, birthdayIso);
       router.push('/');
     } catch (err: any) {
       setError(err.message);
@@ -103,6 +114,20 @@ export default function RegisterPage() {
                 placeholder="请输入用户名"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">
+                生日（日期和时间）阳历
+              </label>
+              <input
+                id="birthday"
+                name="birthday"
+                type="datetime-local"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
               />
             </div>
 
