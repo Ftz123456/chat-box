@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const appId = process.env.DASHSCOPE_APP_ID || 'ede4f02d9fab4c73872c6d025d0ebe33';
     const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
     
-    // 紫微斗数系统提示词
+    
     let typeSystemPrompt= ''
     // 构建请求消息数组
     const requestMessages: Message[] = [];

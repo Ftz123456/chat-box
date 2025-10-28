@@ -64,12 +64,12 @@ function BaziMain() {
 
     const userMessage: Message = { role: 'user', content: input };
     const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages([...newMessages, { role: 'assistant', content: '' }]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/bazi', {
+      const response = await fetch('/api/baziceishi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,23 +82,44 @@ function BaziMain() {
         throw new Error(errorData.error || 'Failed to send message');
       }
 
-      const responseData = await response.json();
-      
-      if (responseData.content) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: responseData.content
-        }]);
-      } else {
-        throw new Error('No content in response');
+      // 处理流式响应
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let assistantText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantText += chunk;
+        
+        // 实时更新助手消息
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+            updated[updated.length - 1] = { role: 'assistant', content: assistantText };
+          }
+          return updated;
+        });
       }
       
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: '抱歉，发生了错误。请稍后再试。'
-      }]);
+      setMessages(prev => {
+        const updated = [...prev];
+        if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+          updated[updated.length - 1] = {
+            role: 'assistant',
+            content: '抱歉，发生了错误。请稍后再试。'
+          };
+        }
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }

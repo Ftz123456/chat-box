@@ -23,20 +23,22 @@ export async function POST(req: NextRequest) {
     const { messages }: ChatRequest = await req.json();
     
     if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Messages are required' },
+        { status: 400 }
+      );
     }
 
     // // 获取用户ID（如果已登录）
     const userId = await MessageService.getUserIdFromRequest(req);
+    //    // 获取用户ID（如果已登录）
+    // const userId = 2;
 
-
-    const apiKey = 'sk-58c6269c6af3447b9e5b86c585ee50f8';
-    const appId =  '63eeb76be2ca454199a249195b521dc8';
+    const apiKey = process.env.DASHSCOPE_API_KEY || 'sk-58c6269c6af3447b9e5b86c585ee50f8';
+    const appId = process.env.DASHSCOPE_APP_ID || 'ede4f02d9fab4c73872c6d025d0ebe33';
     const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
     
-    // 紫微斗数系统提示词
-    let typeSystemPrompt= ''
-    // 构建请求消息数组
+    const typeSystemPrompt = ''; // 可根据需要设置系统提示
     const requestMessages: Message[] = [];
     
     // 添加系统提示
@@ -47,7 +49,7 @@ export async function POST(req: NextRequest) {
       });
     }
     
-    // 添加所有用户消息
+    // 添加用户消息
     messages.forEach(msg => {
       if (msg.role === 'user') {
         requestMessages.push(msg);
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
         messages: requestMessages
       },
       parameters: {
-        incremental_output: true, // 增量输出
+        incremental_output: true, // 增量输出（与原代码保持一致）
         max_tokens: 4096
       }
     };
@@ -160,7 +162,7 @@ export async function POST(req: NextRequest) {
                 // 保存用户消息
                 await MessageService.saveMessage({
                   userId,
-                  chatType: 'ziwei',
+                  chatType: 'bazi',
                   role: 'user',
                   content: lastUserMessage.content
                 });
@@ -168,7 +170,7 @@ export async function POST(req: NextRequest) {
                 // 保存助手回复
                 await MessageService.saveMessage({
                   userId,
-                  chatType: 'ziwei',
+                  chatType: 'bazi',
                   role: 'assistant',
                   content: assistantText
                 });
@@ -215,9 +217,12 @@ export async function POST(req: NextRequest) {
     }
     
   } catch (error) {
-    return NextResponse.json({ 
-      error: '请求解析失败',
-      message: error instanceof Error ? error.message : '未知错误'
-    }, { status: 500 });
+    return NextResponse.json(
+      { 
+        error: '请求解析失败',
+        message: error instanceof Error ? error.message : '未知错误'
+      }, 
+      { status: 500 }
+    );
   }
 }
