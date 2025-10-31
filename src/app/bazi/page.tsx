@@ -6,6 +6,8 @@ import remarkGfm from 'remark-gfm';
 import { useSidebar } from '@/components/Sidebar';
 import BaziForm, { BaziFormData } from '@/components/BaziForm';
 import BaziTable from '@/components/BaziTable';
+import { extractBirthInfo, convertToBaziFormData, formatBirthInfo } from '@/lib/baziParser';
+import { generateBaziMainTable } from '@/lib/baziGenerator';
 
 import { astro } from "iztro";
 interface Message {
@@ -21,6 +23,9 @@ function BaziMain() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [baziData, setBaziData] = useState<BaziFormData | null>(null);
+  const [extractedInfo, setExtractedInfo] = useState<string | null>(null);
+  const [showExtractedInfo, setShowExtractedInfo] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const contentWrapperRef = useRef<HTMLDivElement>(null);
@@ -50,6 +55,8 @@ function BaziMain() {
     const conversationId = searchParams.get('conversationId');
     if (conversationId) {
       loadHistoryConversation(conversationId);
+      // 加载历史记录时，重置 session_id（开启新的对话会话）
+      setSessionId(null);
     }
   }, [searchParams, loadHistoryConversation]);
 
@@ -62,11 +69,55 @@ function BaziMain() {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input };
-    const newMessages = [...messages, userMessage];
+    // 尝试从输入中提取生辰信息
+    const birthInfo = extractBirthInfo(input);
+    const baziFormData = convertToBaziFormData(birthInfo);
+    let isBazi = false;
+    
+    // 如果提取到完整的生辰信息，自动填充并提示用户
+    if (baziFormData) {
+      setBaziData(baziFormData);
+      setExtractedInfo(formatBirthInfo(birthInfo));
+      setShowExtractedInfo(true);
+      isBazi = true;
+      // 3秒后自动隐藏提示
+      setTimeout(() => setShowExtractedInfo(false), 5000);
+    } else if (birthInfo.year || birthInfo.month || birthInfo.day) {
+      // 提取到部分信息，显示提示
+      setExtractedInfo(formatBirthInfo(birthInfo) + ' (信息不完整)');
+      setShowExtractedInfo(true);
+      setTimeout(() => setShowExtractedInfo(false), 5000);
+    }
+
+    // 生成八字数据（如果有完整生辰信息）
+    // 优先使用已设置的baziData（可能是从输入提取的，也可能是之前手动填写的）
+    const baziDataToUse = baziFormData || baziData;
+    let baziMainTableJson = '';
+    if (baziDataToUse) {
+      try {
+        const mainTable = generateBaziMainTable(baziDataToUse);
+        baziMainTableJson = JSON.stringify(mainTable);
+      } catch (error) {
+        console.error('生成八字数据失败:', error);
+      }
+    }
+    // 构建发送给AI的消息（包含八字JSON）和显示的消息（不包含JSON）
+    const userMessageForDisplay: Message = { role: 'user', content: input };
+    const userMessageForAI: Message={ role: 'user', content: input };
+    if(isBazi){
+      userMessageForAI.content += baziMainTableJson;
+      isBazi = false;
+    }
+ 
+    
+    // 显示在界面上的是原始用户输入（不包含JSON）
+    const newMessages = [...messages, userMessageForDisplay];
     setMessages([...newMessages, { role: 'assistant', content: '' }]);
     setInput('');
     setIsLoading(true);
+
+    // 只发送当前用户消息给AI（不包含历史消息）
+    const messagesForAI = [userMessageForAI];
 
     try {
       const response = await fetch('/api/baziceishi', {
@@ -74,7 +125,11 @@ function BaziMain() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ 
+          prompt: userMessageForAI.content, // 用户输入（包含八字JSON）
+          sessionId: sessionId || undefined, // 会话ID（多轮对话时使用）
+          originalMessage: input // 原始用户输入（不包含JSON），用于保存
+        }),
       });
 
       if (!response.ok) {
@@ -96,13 +151,45 @@ function BaziMain() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        assistantText += chunk;
         
-        // 实时更新助手消息
+        // 检测并提取 session_id（格式：\x00SESSION_xxx\x00，其中xxx是Base64编码）
+        const sessionIdPattern = /\x00SESSION_([A-Za-z0-9+/=]+)\x00/;
+        const sessionIdMatch = chunk.match(sessionIdPattern);
+        if (sessionIdMatch && sessionIdMatch[1]) {
+          try {
+            const decoded = atob(sessionIdMatch[1]);
+            if (decoded.startsWith('SESSION_ID:')) {
+              const receivedSessionId = decoded.substring('SESSION_ID:'.length);
+              setSessionId(receivedSessionId);
+            }
+          } catch (e) {
+            console.error('Failed to decode session_id:', e);
+          }
+          // 移除 session_id 标记，只保留实际文本
+          const cleanedChunk = chunk.replace(sessionIdPattern, '');
+          assistantText += cleanedChunk;
+        } else {
+          assistantText += chunk;
+        }
+        
+        // 实时更新助手消息（移除所有可能的 session_id 标记）
+        const displayText = assistantText.replace(/\x00SESSION_[A-Za-z0-9+/=]+\x00/g, '');
         setMessages(prev => {
           const updated = [...prev];
           if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
-            updated[updated.length - 1] = { role: 'assistant', content: assistantText };
+            updated[updated.length - 1] = { role: 'assistant', content: displayText };
+          }
+          return updated;
+        });
+      }
+      
+      // 流结束时，最终清理并更新消息（移除所有可能的 session_id 标记）
+      const finalText = assistantText.replace(/\x00SESSION_[A-Za-z0-9+/=]+\x00/g, '').trim();
+      if (finalText !== assistantText.trim()) {
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+            updated[updated.length - 1] = { role: 'assistant', content: finalText };
           }
           return updated;
         });
@@ -150,8 +237,21 @@ function BaziMain() {
       >
         <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6">
           {/* 八字表单和表格 */}
-          <BaziForm onSubmit={handleBaziSubmit} />
+          <BaziForm onSubmit={handleBaziSubmit} initialData={baziData || undefined} />
           {baziData && <BaziTable formData={baziData} />}
+          
+          {/* 生辰信息提取提示 */}
+          {showExtractedInfo && extractedInfo && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 animate-fade-in">
+              <div className="flex items-start space-x-2">
+                <span className="text-green-600 text-lg">✓</span>
+                <div className="flex-1">
+                  <p className="text-green-800 font-medium mb-1">已自动提取生辰信息</p>
+                  <p className="text-green-700 text-sm">{extractedInfo}</p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {messages.length === 0 ? (
             <BaziPrompt />

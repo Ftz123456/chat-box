@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface BaziFormProps {
   onSubmit: (data: BaziFormData) => void;
+  initialData?: Partial<BaziFormData>;
 }
 
 export interface BaziFormData {
@@ -12,13 +13,23 @@ export interface BaziFormData {
   location?: string;
 }
 
-export default function BaziForm({ onSubmit }: BaziFormProps) {
+export default function BaziForm({ onSubmit, initialData }: BaziFormProps) {
   const [formData, setFormData] = useState<BaziFormData>({
-    date: '',
-    time: '',
-    gender: 'male',
-    location: ''
+    date: initialData?.date || '',
+    time: initialData?.time || '',
+    gender: initialData?.gender || 'male',
+    location: initialData?.location || ''
   });
+
+  // 当initialData变化时更新表单
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData
+      }));
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
