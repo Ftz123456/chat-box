@@ -236,9 +236,9 @@ function BaziMain() {
         }}
       >
         <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6">
-          {/* 八字表单和表格 */}
-          <BaziForm onSubmit={handleBaziSubmit} initialData={baziData || undefined} />
-          {baziData && <BaziTable formData={baziData} />}
+          {/* 八字表单和表格 - 已隐藏 */}
+          {/* <BaziForm onSubmit={handleBaziSubmit} initialData={baziData || undefined} /> */}
+          {/* {baziData && <BaziTable formData={baziData} />} */}
           
           {/* 生辰信息提取提示 */}
           {showExtractedInfo && extractedInfo && (

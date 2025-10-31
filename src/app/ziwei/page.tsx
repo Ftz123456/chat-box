@@ -26,6 +26,7 @@ function ZiWeiContent() {
   const [horoscope, setHoroscope] = useState('');
   const [isAutoSend, setIsAutoSend] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   console.log(horoscope); 
 
 
@@ -68,6 +69,8 @@ function ZiWeiContent() {
     const conversationId = searchParams.get('conversationId');
     if (conversationId) {
       loadHistoryConversation(conversationId);
+      // 加载历史记录时，重置 session_id（开启新的对话会话）
+      setSessionId(null);
     }
   }, [searchParams, loadHistoryConversation]);
 
@@ -91,9 +94,11 @@ function ZiWeiContent() {
     if (isLoading) return; // 如果正在加载，不重复发送
     
     setIsLoading(true);
+    const promptContent = `这是我的紫微斗数命盘信息：\n${currentHoroscope}\n\n请帮我分析解读。`;
+    
     const userMessage: Message = { 
       role: 'user', 
-      content: `这是我的紫微斗数命盘信息：\n${currentHoroscope}\n\n请帮我分析解读。`
+      content: promptContent
     };
     
     const newMessages = [...messages, userMessage];
@@ -105,7 +110,11 @@ function ZiWeiContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ 
+          prompt: promptContent,
+          sessionId: sessionId || undefined,
+          originalMessage: promptContent
+        }),
       });
 
       if (!response.ok) {
@@ -127,13 +136,45 @@ function ZiWeiContent() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        assistantText += chunk;
         
-        // 实时更新助手消息
+        // 检测并提取 session_id（格式：\x00SESSION_xxx\x00，其中xxx是Base64编码）
+        const sessionIdPattern = /\x00SESSION_([A-Za-z0-9+/=]+)\x00/;
+        const sessionIdMatch = chunk.match(sessionIdPattern);
+        if (sessionIdMatch && sessionIdMatch[1]) {
+          try {
+            const decoded = atob(sessionIdMatch[1]);
+            if (decoded.startsWith('SESSION_ID:')) {
+              const receivedSessionId = decoded.substring('SESSION_ID:'.length);
+              setSessionId(receivedSessionId);
+            }
+          } catch (e) {
+            console.error('Failed to decode session_id:', e);
+          }
+          // 移除 session_id 标记，只保留实际文本
+          const cleanedChunk = chunk.replace(sessionIdPattern, '');
+          assistantText += cleanedChunk;
+        } else {
+          assistantText += chunk;
+        }
+        
+        // 实时更新助手消息（移除所有可能的 session_id 标记）
+        const displayText = assistantText.replace(/\x00SESSION_[A-Za-z0-9+/=]+\x00/g, '');
         setMessages(prev => {
           const updated = [...prev];
           if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
-            updated[updated.length - 1] = { role: 'assistant', content: assistantText };
+            updated[updated.length - 1] = { role: 'assistant', content: displayText };
+          }
+          return updated;
+        });
+      }
+      
+      // 流结束时，最终清理并更新消息（移除所有可能的 session_id 标记）
+      const finalText = assistantText.replace(/\x00SESSION_[A-Za-z0-9+/=]+\x00/g, '').trim();
+      if (finalText !== assistantText.trim()) {
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+            updated[updated.length - 1] = { role: 'assistant', content: finalText };
           }
           return updated;
         });
@@ -163,6 +204,7 @@ function ZiWeiContent() {
     const userMessage: Message = { role: 'user', content: input };
     const newMessages = [...messages, userMessage];
     setMessages([...newMessages, { role: 'assistant', content: '' }]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
@@ -172,7 +214,11 @@ function ZiWeiContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ 
+          prompt: currentInput,
+          sessionId: sessionId || undefined,
+          originalMessage: currentInput
+        }),
       });
 
       if (!response.ok) {
@@ -194,13 +240,45 @@ function ZiWeiContent() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        assistantText += chunk;
         
-        // 实时更新助手消息
+        // 检测并提取 session_id（格式：\x00SESSION_xxx\x00，其中xxx是Base64编码）
+        const sessionIdPattern = /\x00SESSION_([A-Za-z0-9+/=]+)\x00/;
+        const sessionIdMatch = chunk.match(sessionIdPattern);
+        if (sessionIdMatch && sessionIdMatch[1]) {
+          try {
+            const decoded = atob(sessionIdMatch[1]);
+            if (decoded.startsWith('SESSION_ID:')) {
+              const receivedSessionId = decoded.substring('SESSION_ID:'.length);
+              setSessionId(receivedSessionId);
+            }
+          } catch (e) {
+            console.error('Failed to decode session_id:', e);
+          }
+          // 移除 session_id 标记，只保留实际文本
+          const cleanedChunk = chunk.replace(sessionIdPattern, '');
+          assistantText += cleanedChunk;
+        } else {
+          assistantText += chunk;
+        }
+        
+        // 实时更新助手消息（移除所有可能的 session_id 标记）
+        const displayText = assistantText.replace(/\x00SESSION_[A-Za-z0-9+/=]+\x00/g, '');
         setMessages(prev => {
           const updated = [...prev];
           if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
-            updated[updated.length - 1] = { role: 'assistant', content: assistantText };
+            updated[updated.length - 1] = { role: 'assistant', content: displayText };
+          }
+          return updated;
+        });
+      }
+      
+      // 流结束时，最终清理并更新消息（移除所有可能的 session_id 标记）
+      const finalText = assistantText.replace(/\x00SESSION_[A-Za-z0-9+/=]+\x00/g, '').trim();
+      if (finalText !== assistantText.trim()) {
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+            updated[updated.length - 1] = { role: 'assistant', content: finalText };
           }
           return updated;
         });

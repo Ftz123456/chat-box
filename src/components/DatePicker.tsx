@@ -8,7 +8,7 @@ export interface DatePickerValue {
   day: number;
   hour: number | null;
   minute: number | null;
-  calendarType: 'solar' | 'lunar' | 'bazi';
+  calendarType: 'solar' | 'lunar';
 }
 
 interface DatePickerProps {
@@ -16,6 +16,7 @@ interface DatePickerProps {
   onClose: () => void;
   onConfirm: (value: DatePickerValue) => void;
   initialValue?: DatePickerValue;
+  showTime?: boolean; // 是否显示时分选择，默认 true
 }
 
 const ITEM_HEIGHT = 44; // 每个选项的高度
@@ -23,8 +24,8 @@ const VISIBLE_ITEMS = 5; // 可见的项目数量
 const COLUMN_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const PADDING_ITEMS = Math.floor(VISIBLE_ITEMS / 2); // 上下填充的项目数量
 
-export default function DatePicker({ isOpen, onClose, onConfirm, initialValue }: DatePickerProps) {
-  const [calendarType, setCalendarType] = useState<'solar' | 'lunar' | 'bazi'>('solar');
+export default function DatePicker({ isOpen, onClose, onConfirm, initialValue, showTime = true }: DatePickerProps) {
+  const [calendarType, setCalendarType] = useState<'solar' | 'lunar'>('solar');
   const [year, setYear] = useState(initialValue?.year || new Date().getFullYear());
   const [month, setMonth] = useState(initialValue?.month || new Date().getMonth() + 1);
   const [day, setDay] = useState(initialValue?.day || new Date().getDate());
@@ -540,16 +541,6 @@ export default function DatePicker({ isOpen, onClose, onConfirm, initialValue }:
             >
               农历
             </button>
-            <button
-              onClick={() => setCalendarType('bazi')}
-              className={`px-4 md:px-6 py-1.5 md:py-2 rounded-md text-sm md:text-base font-medium transition-colors ${
-                calendarType === 'bazi'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              四柱
-            </button>
           </div>
           
           <button
@@ -682,6 +673,7 @@ export default function DatePicker({ isOpen, onClose, onConfirm, initialValue }:
             </div>
 
             {/* 小时列 */}
+            {showTime && (
             <div className="flex-1 flex flex-col items-center">
               <div className="text-xs md:text-sm text-gray-500 mb-2 font-medium">时</div>
               <div className="relative w-full" style={{ height: COLUMN_HEIGHT }}>
@@ -693,8 +685,10 @@ export default function DatePicker({ isOpen, onClose, onConfirm, initialValue }:
                 />
               </div>
             </div>
+            )}
 
             {/* 分钟列 */}
+            {showTime && (
             <div className="flex-1 flex flex-col items-center">
               <div className="text-xs md:text-sm text-gray-500 mb-2 font-medium">分</div>
               <div className="relative w-full" style={{ height: COLUMN_HEIGHT }}>
@@ -706,6 +700,7 @@ export default function DatePicker({ isOpen, onClose, onConfirm, initialValue }:
                 />
               </div>
             </div>
+            )}
           </div>
         </div>
 
