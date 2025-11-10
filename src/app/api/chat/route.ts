@@ -181,28 +181,39 @@ export async function POST(req: NextRequest) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
                 
-                if (data === '[DONE]') {
+                  if (data === '[DONE]') {
                   // 保存消息到数据库
                   if (userId && assistantContent.trim()) {
                     try {
+                      // 获取或生成session_id
+                      let currentSessionId: string | undefined;
+                      
                       // 保存用户消息
                       const lastUserMessage = messages.filter(m => m.role === 'user').pop();
                       if (lastUserMessage) {
-                        await MessageService.saveMessage({
+                        const userResult = await MessageService.saveMessage({
                           userId,
                           chatType: type,
                           role: 'user',
                           content: lastUserMessage.content
                         });
+                        currentSessionId = userResult.session_id;
                       }
 
                       // 保存助手回复
-                      await MessageService.saveMessage({
+                      const assistantResult = await MessageService.saveMessage({
                         userId,
                         chatType: type,
                         role: 'assistant',
-                        content: assistantContent
+                        content: assistantContent,
+                        sessionId: currentSessionId
                       });
+                      
+                      // 将session_id发送给客户端（如果需要）
+                      if (assistantResult.session_id) {
+                        const encodedSessionId = Buffer.from(`SESSION_ID:${assistantResult.session_id}`).toString('base64');
+                        controller.enqueue(encoder.encode(`\x00SESSION_${encodedSessionId}\x00`));
+                      }
                     } catch (error) {
                       console.error('保存消息失败:', error);
                     }

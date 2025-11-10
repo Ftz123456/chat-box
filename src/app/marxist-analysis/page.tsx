@@ -34,10 +34,10 @@ function MarxistAnalysisContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const loadHistoryConversation = useCallback(async (conversationId: string) => {
+  const loadHistoryConversation = useCallback(async (sessionId: string) => {
     setIsLoadingHistory(true);
     try {
-      const response = await fetch(`/api/user/history/${conversationId}`);
+      const response = await fetch(`/api/user/history/${encodeURIComponent(sessionId)}`);
       if (response.ok) {
         const data = await response.json();
         const historyMessages = data.messages.map((msg: any) => ({
@@ -55,9 +55,10 @@ function MarxistAnalysisContent() {
 
   // 加载历史记录
   useEffect(() => {
-    const conversationId = searchParams.get('conversationId');
-    if (conversationId) {
-      loadHistoryConversation(conversationId);
+    // 优先使用sessionId，兼容旧的conversationId
+    const sessionId = searchParams.get('sessionId') || searchParams.get('conversationId');
+    if (sessionId) {
+      loadHistoryConversation(sessionId);
     }
   }, [searchParams, loadHistoryConversation]);
 

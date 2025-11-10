@@ -66,10 +66,10 @@ function HomeContent() {
 
   const hasMessages = messagesByType[chatType].length > 0;
 
-  const loadHistoryConversation = useCallback(async (conversationId: string) => {
+  const loadHistoryConversation = useCallback(async (sessionId: string) => {
     setIsLoadingHistory(true);
     try {
-      const response = await fetch(`/api/user/history/${conversationId}`);
+      const response = await fetch(`/api/user/history/${encodeURIComponent(sessionId)}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -100,24 +100,11 @@ function HomeContent() {
 
   // 加载历史记录
   useEffect(() => {
-    const conversationId = searchParams.get('conversationId');
+    // 优先使用sessionId，兼容旧的conversationId
+    const sessionId = searchParams.get('sessionId') || searchParams.get('conversationId');
     
-    // 如果conversationId为空，尝试从type参数中提取
-    let actualConversationId = conversationId;
-    if (!actualConversationId) {
-      const typeParam = searchParams.get('type');
-      
-      if (typeParam && typeParam.includes('conversationId=')) {
-        // 从type参数中提取conversationId
-        const match = typeParam.match(/conversationId=(\d+)/);
-        if (match) {
-          actualConversationId = match[1];
-        }
-      }
-    }
-    
-    if (actualConversationId) {
-      loadHistoryConversation(actualConversationId);
+    if (sessionId) {
+      loadHistoryConversation(sessionId);
     }
   }, [searchParams, loadHistoryConversation]);
 

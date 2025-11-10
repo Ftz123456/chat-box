@@ -31,10 +31,10 @@ function BaziMain() {
   const contentWrapperRef = useRef<HTMLDivElement>(null);
   
 
-  const loadHistoryConversation = useCallback(async (conversationId: string) => {
+  const loadHistoryConversation = useCallback(async (sessionId: string) => {
     setIsLoadingHistory(true);
     try {
-      const response = await fetch(`/api/user/history/${conversationId}`);
+      const response = await fetch(`/api/user/history/${encodeURIComponent(sessionId)}`);
       if (response.ok) {
         const data = await response.json();
         const historyMessages = data.messages.map((msg: any) => ({
@@ -42,6 +42,10 @@ function BaziMain() {
           content: msg.content
         }));
         setMessages(historyMessages);
+        // 如果返回了session_id，设置它以便继续对话
+        if (data.session_id) {
+          setSessionId(data.session_id);
+        }
       }
     } catch (error) {
       console.error('加载历史记录失败:', error);
@@ -52,11 +56,10 @@ function BaziMain() {
 
   // 加载历史记录
   useEffect(() => {
-    const conversationId = searchParams.get('conversationId');
-    if (conversationId) {
-      loadHistoryConversation(conversationId);
-      // 加载历史记录时，重置 session_id（开启新的对话会话）
-      setSessionId(null);
+    // 优先使用sessionId，兼容旧的conversationId
+    const sessionId = searchParams.get('sessionId') || searchParams.get('conversationId');
+    if (sessionId) {
+      loadHistoryConversation(sessionId);
     }
   }, [searchParams, loadHistoryConversation]);
 

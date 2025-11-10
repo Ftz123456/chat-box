@@ -7,15 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const conversationId = parseInt(id);
     
-    if (isNaN(conversationId)) {
-      return NextResponse.json(
-        { error: '无效的对话ID' },
-        { status: 400 }
-      );
-    }
-
     // 获取用户ID
     const userId = await MessageService.getUserIdFromRequest(request);
     if (!userId) {
@@ -25,8 +17,23 @@ export async function GET(
       );
     }
 
-    // 获取对话详情
-    const conversation = await MessageService.getConversation(userId, conversationId);
+    let conversation;
+    
+    // 首先尝试作为session_id（UUID字符串）查询
+    try {
+      conversation = await MessageService.getConversationBySessionId(userId, id);
+    } catch (e) {
+      console.error('通过session_id查询失败:', e);
+      // 如果失败，尝试作为数字ID查询（兼容旧接口）
+      const conversationId = parseInt(id);
+      if (!isNaN(conversationId)) {
+        try {
+          conversation = await MessageService.getConversation(userId, conversationId);
+        } catch (e2) {
+          console.error('通过ID查询失败:', e2);
+        }
+      }
+    }
     
     if (!conversation) {
       return NextResponse.json(
@@ -37,6 +44,7 @@ export async function GET(
 
     return NextResponse.json({
       id: conversation.id,
+      session_id: conversation.session_id,
       chat_type: conversation.chat_type,
       title: conversation.title,
       messages: conversation.messages,

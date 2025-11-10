@@ -75,12 +75,15 @@ const UserCenter = () => {
     
     const path = pathMap[item.chat_type] || '/';
     
+    // 优先使用session_id，如果没有则使用id（兼容旧数据）
+    const sessionId = item.session_id || item.id;
+    
     // 构建正确的URL参数
     let url = path;
     if (item.chat_type === 'digital' || item.chat_type === 'comprehensive') {
-      url += `?type=${item.chat_type}&conversationId=${item.id}`;
+      url += `?type=${item.chat_type}&sessionId=${encodeURIComponent(sessionId)}`;
     } else {
-      url += `?conversationId=${item.id}`;
+      url += `?sessionId=${encodeURIComponent(sessionId)}`;
     }
     
     router.push(url);

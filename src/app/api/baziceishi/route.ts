@@ -168,21 +168,32 @@ export async function POST(req: NextRequest) {
             // 流结束时保存消息（如果有完整内容）
             if (userId && assistantText && messageToSave) {
               try {
+                // 获取或生成session_id
+                let currentSessionId: string | undefined = sessionId || returnedSessionId || undefined;
+                
                 // 保存用户消息（使用原始消息，不包含JSON）
-                await MessageService.saveMessage({
+                const userResult = await MessageService.saveMessage({
                   userId,
                   chatType: 'bazi',
                   role: 'user',
-                  content: messageToSave
+                  content: messageToSave,
+                  sessionId: currentSessionId
                 });
+                currentSessionId = userResult.session_id;
 
                 // 保存助手回复
-                await MessageService.saveMessage({
+                const assistantResult = await MessageService.saveMessage({
                   userId,
                   chatType: 'bazi',
                   role: 'assistant',
-                  content: assistantText
+                  content: assistantText,
+                  sessionId: currentSessionId
                 });
+                
+                // 如果返回了新的session_id，更新returnedSessionId
+                if (assistantResult.session_id && !returnedSessionId) {
+                  returnedSessionId = assistantResult.session_id;
+                }
               } catch (saveErr) {
                 console.error('保存消息失败:', saveErr);
               }

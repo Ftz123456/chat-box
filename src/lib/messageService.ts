@@ -15,6 +15,7 @@ export interface SaveMessageParams {
 
 export interface Conversation {
   id: number;
+  session_id: string;
   user_id: number;
   chat_type: string;
   title: string;
@@ -25,6 +26,7 @@ export interface Conversation {
 
 export interface ChatHistoryItem {
   id: number;
+  session_id: string;
   chat_type: string;
   title: string;
   message_count: number;
@@ -65,9 +67,23 @@ export class MessageService {
   }
 
   /**
-   * 保存或更新对话到数据库
+   * 生成唯一的session_id
    */
-  static async saveConversation(userId: number, chatType: string, messages: Message[]): Promise<number> {
+  static generateSessionId(): Buffer {
+    const crypto = require('crypto');
+    const uuid = crypto.randomUUID();
+    return Buffer.from(uuid, 'utf8');
+  }
+
+  /**
+   * 保存或更新对话到数据库（支持session_id）
+   */
+  static async saveConversation(
+    userId: number, 
+    chatType: string, 
+    messages: Message[], 
+    sessionId?: Buffer | string
+  ): Promise<{ id: number; session_id: Buffer }> {
     try {
       // 生成对话标题
       const firstUserMessage = messages.find(msg => msg.role === 'user');
@@ -75,10 +91,24 @@ export class MessageService {
         ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
         : `${chatType}对话`;
 
-      // 检查是否已存在该用户的该类型对话
+      // 处理session_id
+      let sessionIdBuffer: Buffer;
+      if (sessionId) {
+        if (Buffer.isBuffer(sessionId)) {
+          sessionIdBuffer = sessionId;
+        } else {
+          // session_id是UUID格式的字符串，直接使用UTF-8编码
+          sessionIdBuffer = Buffer.from(sessionId, 'utf8');
+        }
+      } else {
+        // 如果没有提供session_id，生成一个新的
+        sessionIdBuffer = this.generateSessionId();
+      }
+
+      // 检查是否已存在该session_id的对话
       const [existing] = await pool.execute(
-        'SELECT id FROM conversations WHERE user_id = ? AND chat_type = ? ORDER BY updated_at DESC LIMIT 1',
-        [userId, chatType]
+        'SELECT id FROM conversations WHERE session_id = ? AND user_id = ?',
+        [sessionIdBuffer, userId]
       );
 
       if (Array.isArray(existing) && existing.length > 0) {
@@ -88,14 +118,14 @@ export class MessageService {
           'UPDATE conversations SET messages = ?, title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
           [JSON.stringify(messages), title, conversationId]
         );
-        return conversationId;
+        return { id: conversationId, session_id: sessionIdBuffer };
       } else {
         // 创建新对话
         const [result] = await pool.execute(
-          'INSERT INTO conversations (user_id, chat_type, title, messages) VALUES (?, ?, ?, ?)',
-          [userId, chatType, title, JSON.stringify(messages)]
+          'INSERT INTO conversations (session_id, user_id, chat_type, title, messages) VALUES (?, ?, ?, ?, ?)',
+          [sessionIdBuffer, userId, chatType, title, JSON.stringify(messages)]
         );
-        return (result as any).insertId;
+        return { id: (result as any).insertId, session_id: sessionIdBuffer };
       }
     } catch (error) {
       console.error('保存对话失败:', error);
@@ -104,32 +134,42 @@ export class MessageService {
   }
 
   /**
-   * 保存单条消息到数据库（兼容旧接口）
+   * 保存单条消息到数据库（支持session_id）
    */
-  static async saveMessage(params: SaveMessageParams): Promise<number> {
+  static async saveMessage(
+    params: SaveMessageParams & { sessionId?: string }
+  ): Promise<{ id: number; session_id: string }> {
     try {
-      // 获取或创建当前对话
-      const [existing] = await pool.execute(
-        'SELECT id, messages FROM conversations WHERE user_id = ? AND chat_type = ? ORDER BY updated_at DESC LIMIT 1',
-        [params.userId, params.chatType]
-      );
-
       let messages: Message[] = [];
-      let conversationId: number;
+      let sessionIdString: string | undefined = params.sessionId;
 
-      if (Array.isArray(existing) && existing.length > 0) {
-        // 更新现有对话
-        const conversation = (existing as any[])[0];
-        conversationId = conversation.id;
-        // MySQL JSON字段已经自动解析为JavaScript对象，不需要JSON.parse
-        messages = Array.isArray(conversation.messages) ? conversation.messages : [];
-      } else {
-        // 创建新对话
-        const [result] = await pool.execute(
-          'INSERT INTO conversations (user_id, chat_type, title, messages) VALUES (?, ?, ?, ?)',
-          [params.userId, params.chatType, '新对话', JSON.stringify([])]
+      // 如果有session_id，尝试获取现有对话
+      if (sessionIdString) {
+        const sessionIdBuffer = Buffer.from(sessionIdString, 'utf8');
+        const [existing] = await pool.execute(
+          'SELECT id, messages FROM conversations WHERE session_id = ? AND user_id = ?',
+          [sessionIdBuffer, params.userId]
         );
-        conversationId = (result as any).insertId;
+
+        if (Array.isArray(existing) && existing.length > 0) {
+          const conversation = (existing as any[])[0];
+          messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+        }
+      } else {
+        // 如果没有session_id，尝试获取最新的对话（兼容旧逻辑）
+        const [existing] = await pool.execute(
+          'SELECT id, messages, session_id FROM conversations WHERE user_id = ? AND chat_type = ? ORDER BY updated_at DESC LIMIT 1',
+          [params.userId, params.chatType]
+        );
+
+        if (Array.isArray(existing) && existing.length > 0) {
+          const conversation = (existing as any[])[0];
+          messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+          // 获取现有对话的session_id
+          if (conversation.session_id) {
+            sessionIdString = conversation.session_id.toString('utf8');
+          }
+        }
       }
 
       // 添加新消息
@@ -138,10 +178,15 @@ export class MessageService {
         content: params.content
       });
 
-      // 更新对话
-      await this.saveConversation(params.userId, params.chatType, messages);
+      // 保存或更新对话
+      const result = await this.saveConversation(
+        params.userId, 
+        params.chatType, 
+        messages, 
+        sessionIdString ? Buffer.from(sessionIdString, 'utf8') : undefined
+      );
       
-      return conversationId;
+      return { id: result.id, session_id: result.session_id.toString('utf8') };
     } catch (error) {
       console.error('保存消息失败:', error);
       throw error;
@@ -149,9 +194,14 @@ export class MessageService {
   }
 
   /**
-   * 批量保存消息到数据库
+   * 批量保存消息到数据库（支持session_id）
    */
-  static async saveMessages(userId: number, chatType: string, messages: Message[]): Promise<void> {
+  static async saveMessages(
+    userId: number, 
+    chatType: string, 
+    messages: Message[], 
+    sessionId?: string
+  ): Promise<{ id: number; session_id: string }> {
     try {
       // 过滤出用户和助手的消息，排除系统消息
       const validMessages = messages.filter(msg => 
@@ -159,11 +209,17 @@ export class MessageService {
       );
 
       if (validMessages.length === 0) {
-        return;
+        // 如果没有有效消息，生成一个新的session_id
+        const newSessionId = this.generateSessionId();
+        return { id: 0, session_id: newSessionId.toString('utf8') };
       }
 
+      // 转换sessionId为Buffer（如果需要）
+      const sessionIdBuffer = sessionId ? Buffer.from(sessionId, 'utf8') : undefined;
+      
       // 使用新的对话保存方法
-      await this.saveConversation(userId, chatType, validMessages);
+      const result = await this.saveConversation(userId, chatType, validMessages, sessionIdBuffer);
+      return { id: result.id, session_id: result.session_id.toString('utf8') };
     } catch (error) {
       console.error('批量保存消息失败:', error);
       throw error;
@@ -178,6 +234,7 @@ export class MessageService {
       const [history] = await pool.execute(`
         SELECT 
           id,
+          session_id,
           chat_type,
           title,
           JSON_LENGTH(messages) as message_count,
@@ -191,6 +248,7 @@ export class MessageService {
 
       return (history as any[]).map(item => ({
         id: item.id,
+        session_id: item.session_id ? item.session_id.toString('utf8') : '',
         chat_type: item.chat_type,
         title: item.title,
         message_count: item.message_count,
@@ -233,7 +291,51 @@ export class MessageService {
   }
 
   /**
-   * 获取特定对话的完整信息
+   * 根据session_id获取对话
+   */
+  static async getConversationBySessionId(
+    userId: number, 
+    sessionId: string | Buffer
+  ): Promise<Conversation | null> {
+    try {
+      let sessionIdBuffer: Buffer;
+      
+      if (Buffer.isBuffer(sessionId)) {
+        sessionIdBuffer = sessionId;
+      } else {
+        // session_id是UUID格式的字符串，直接使用UTF-8编码
+        // 不尝试base64解码，因为UUID不是base64格式
+        sessionIdBuffer = Buffer.from(sessionId, 'utf8');
+      }
+      
+      const [conversation] = await pool.execute(
+        'SELECT * FROM conversations WHERE session_id = ? AND user_id = ?',
+        [sessionIdBuffer, userId]
+      );
+
+      if ((conversation as any[]).length === 0) {
+        return null;
+      }
+
+      const conv = (conversation as any[])[0];
+      return {
+        id: conv.id,
+        session_id: conv.session_id ? conv.session_id.toString('utf8') : '',
+        user_id: conv.user_id,
+        chat_type: conv.chat_type,
+        title: conv.title,
+        messages: conv.messages, // MySQL JSON字段已经自动解析
+        created_at: conv.created_at,
+        updated_at: conv.updated_at
+      };
+    } catch (error) {
+      console.error('获取对话失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取特定对话的完整信息（兼容旧接口，通过id查询）
    */
   static async getConversation(userId: number, conversationId: number): Promise<Conversation | null> {
     try {
@@ -249,6 +351,7 @@ export class MessageService {
       const conv = (conversation as any[])[0];
       return {
         id: conv.id,
+        session_id: conv.session_id ? conv.session_id.toString('utf8') : '',
         user_id: conv.user_id,
         chat_type: conv.chat_type,
         title: conv.title,

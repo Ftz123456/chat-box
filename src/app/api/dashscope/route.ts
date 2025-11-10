@@ -96,15 +96,18 @@ export async function POST(req: NextRequest) {
         // 保存消息到数据库
         if (userId) {
           try {
+            let currentSessionId: string | undefined;
+            
             // 保存用户消息
             const lastUserMessage = messages.filter(m => m.role === 'user').pop();
             if (lastUserMessage) {
-              await MessageService.saveMessage({
+              const userResult = await MessageService.saveMessage({
                 userId,
                 chatType: 'zhongyi',
                 role: 'user',
                 content: lastUserMessage.content
               });
+              currentSessionId = userResult.session_id;
             }
 
             // 保存助手回复
@@ -112,7 +115,8 @@ export async function POST(req: NextRequest) {
               userId,
               chatType: 'zhongyi',
               role: 'assistant',
-              content: responseData.output.text
+              content: responseData.output.text,
+              sessionId: currentSessionId
             });
           } catch (error) {
             console.error('保存消息失败:', error);
