@@ -298,6 +298,11 @@ export class MessageService {
     sessionId: string | Buffer
   ): Promise<Conversation | null> {
     try {
+      // 如果sessionId为空或无效，直接返回null
+      if (!sessionId || (typeof sessionId === 'string' && sessionId.trim().length === 0)) {
+        return null;
+      }
+
       let sessionIdBuffer: Buffer;
       
       if (Buffer.isBuffer(sessionId)) {
@@ -452,5 +457,40 @@ export class MessageService {
     };
     
     return pathMap[pathname] || 'digital';
+  }
+
+  /**
+   * 删除对话（通过session_id或id）
+   */
+  static async deleteConversation(
+    userId: number,
+    sessionIdOrId: string | number
+  ): Promise<boolean> {
+    try {
+      // 如果传入的是数字，作为id处理
+      if (typeof sessionIdOrId === 'number') {
+        const [result] = await pool.execute(
+          'DELETE FROM conversations WHERE id = ? AND user_id = ?',
+          [sessionIdOrId, userId]
+        );
+        return (result as any).affectedRows > 0;
+      }
+
+      // 如果传入的是字符串，检查是否为空
+      if (!sessionIdOrId || (typeof sessionIdOrId === 'string' && sessionIdOrId.trim().length === 0)) {
+        return false;
+      }
+
+      // 作为session_id处理
+      const sessionIdBuffer = Buffer.from(sessionIdOrId, 'utf8');
+      const [result] = await pool.execute(
+        'DELETE FROM conversations WHERE session_id = ? AND user_id = ?',
+        [sessionIdBuffer, userId]
+      );
+      return (result as any).affectedRows > 0;
+    } catch (error) {
+      console.error('删除对话失败:', error);
+      throw error;
+    }
   }
 }
