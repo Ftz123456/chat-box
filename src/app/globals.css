@@ -133,6 +133,12 @@ body {
     background-color: #1e293b;
     color: #cbd5e1;
   }
+
+  /* 深色模式下 select option 的文字颜色 */
+  select option {
+    background-color: #1e293b;
+    color: #f1f5f9;
+  }
 }
 
 /* Safe area padding for fixed bottom bars */

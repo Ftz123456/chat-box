@@ -220,7 +220,7 @@ export default function FormPanel({ onPanChart, className }: { onPanChart: (data
 
       {/* 生日输入 */}
       <div className="form-group mb-4 lg:mb-6">
-        <label className="block text-sm font-medium mb-2">生日</label>
+        <label className="block text-sm font-medium mb-2 text-gray-900">生日</label>
         <button
           type="button"
           onClick={() => setIsDatePickerOpen(true)}
@@ -235,11 +235,11 @@ export default function FormPanel({ onPanChart, className }: { onPanChart: (data
 
       {/* 时辰选择 */}
       <div className="form-group mb-4 lg:mb-6">
-        <label className="block text-sm font-medium mb-2">时辰</label>
+        <label className="block text-sm font-medium mb-2 text-gray-900">时辰</label>
         <select
           value={hour}
           onChange={handleHourChange}
-          className="w-full p-2 lg:p-2.5 border border-gray-300 rounded-md text-xs lg:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+          className="w-full p-2 lg:p-2.5 border border-gray-300 rounded-md text-xs lg:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white text-gray-900"
           aria-label="选择时辰"
         >
           {hours.map((h, idx) => (
@@ -250,7 +250,7 @@ export default function FormPanel({ onPanChart, className }: { onPanChart: (data
 
       {/* 性别选择 */}
       <div className="form-group mb-4 lg:mb-6">
-        <label className="block text-sm font-medium mb-2">性别</label>
+        <label className="block text-sm font-medium mb-2 text-gray-900">性别</label>
         <div className="gender-radios flex gap-4 lg:gap-6">
           <label className="flex items-center cursor-pointer">
             <input
@@ -261,7 +261,7 @@ export default function FormPanel({ onPanChart, className }: { onPanChart: (data
               onChange={handleGenderChange}
               className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
             />
-            <span className="text-xs lg:text-sm">男</span>
+            <span className="text-xs lg:text-sm text-gray-900">男</span>
           </label>
           <label className="flex items-center cursor-pointer">
             <input
@@ -272,20 +272,20 @@ export default function FormPanel({ onPanChart, className }: { onPanChart: (data
               onChange={handleGenderChange}
               className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
             />
-            <span className="text-xs lg:text-sm">女</span>
+            <span className="text-xs lg:text-sm text-gray-900">女</span>
           </label>
         </div>
       </div>
 
       {/* 名字输入 */}
       <div className="form-group mb-6 lg:mb-8">
-        <label className="block text-sm font-medium mb-2">名字</label>
+        <label className="block text-sm font-medium mb-2 text-gray-900">名字</label>
         <input
           type="text"
           value={name}
           onChange={handleNameChange}
           placeholder="输入姓名"
-          className="w-full p-2 lg:p-2.5 border border-gray-300 rounded-md text-xs lg:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+          className="w-full p-2 lg:p-2.5 border border-gray-300 rounded-md text-xs lg:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white text-gray-900 placeholder:text-gray-400"
         />
       </div>
 

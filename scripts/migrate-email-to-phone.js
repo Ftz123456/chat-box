@@ -5,7 +5,7 @@ async function migrateEmailToPhone() {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    password: process.env.DB_PASSWORD || '123456',
     port: parseInt(process.env.DB_PORT || '3306'),
     database: process.env.DB_NAME || 'chat_box'
   });
@@ -29,7 +29,7 @@ async function migrateEmailToPhone() {
 
     if (emailColumns.length > 0 && phoneColumns.length === 0) {
       console.log('发现email字段，开始迁移...');
-      
+
       // 添加phone字段
       await connection.execute(`
         ALTER TABLE users 

@@ -312,59 +312,54 @@ function ZiWeiContent() {
   };
   const firstUserIndex = messages.findIndex(m => m.role === 'user');
   return (
-    <>
-      {/* 顶部空白容器 - 高度等于按钮高度，只在手机端显示 */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-[60] bg-transparent pointer-events-none" />
-      
-      <div className="App p-2 sm:p-4 lg:p-8 max-w-9xl w-full mx-auto flex flex-col gap-4 sm:gap-6 lg:gap-6 min-h-screen" style={{ margin: '5px auto', boxShadow: '0 0 25px rgba(0,0,0,0.25)'}}>
-        {/* 手机端顶部空白区域 - 确保内容不被按钮遮挡 */}
-        <div className="lg:hidden h-16 w-full" />
-      <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-6">
-        {/* 星图区域 */}
-        <div className="flex-1 w-full aspect-square lg:max-h-[calc(100vh-15rem)] lg:min-h-[500px] mb-4 sm:mb-6 lg:mb-0">
-          <div className="w-full h-full border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white p-2">
-            <Iztrolabe
-              birthday={birthday}
-              birthTime={hourMap[hour as keyof typeof hourMap]}
-              birthdayType={dateType}
-              gender={gender}
-              horoscopeDate={new Date()}
-              horoscopeHour={1}
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-        {/* 表单区域 */}
-        <div className="flex-shrink-0 h-auto lg:max-h-[calc(100vh-15rem)] flex items-stretch lg:min-h-[500px] w-full lg:w-auto">
-          <div className="w-full border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
-            <FormPanel 
-              className="h-full w-full"
-              onPanChart={({ dateType, birthday, hour, gender, name ,horoscope,isAutoSend}) => {
-                setDateType(dateType);
-                setBirthday(birthday);
-                setHour(hour);
-                setGender(gender);
-                setName(name);
-                setHoroscope(horoscope);
-                setIsAutoSend(isAutoSend)
-              }} />
-          </div>
-        </div>
-      
-      </div>
-      {/* 内容区域 - 去掉独立滚动，使整页跟随消息滚动 */}
-      <div
-      ref={contentWrapperRef}
-      className="w-full mt-4"
-      style={{
-      padding: '16px',
-      boxSizing: 'border-box',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px'
-      }}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
+      {/* 内容区域 - 独立滚动容器 */}
+      <div 
+        ref={contentWrapperRef}
+        className="flex-1 overflow-y-auto pb-32 lg:pb-32"
+        style={{ 
+          padding: '16px lg:24px',
+          maxHeight: 'calc(100vh - 130px)',
+          boxSizing: 'border-box'
+        }}
       >
-        <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6 pb-32">
-          <>
+        <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6">
+          {/* 星图和表单区域 */}
+          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-6">
+            {/* 星图区域 */}
+            <div className="flex-1 w-full aspect-square lg:max-h-[calc(100vh-15rem)] lg:min-h-[500px]">
+              <div className="w-full h-full border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white p-2">
+                <Iztrolabe
+                  birthday={birthday}
+                  birthTime={hourMap[hour as keyof typeof hourMap]}
+                  birthdayType={dateType}
+                  gender={gender}
+                  horoscopeDate={new Date()}
+                  horoscopeHour={1}
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+            {/* 表单区域 */}
+            <div className="flex-shrink-0 h-auto lg:max-h-[calc(100vh-15rem)] flex items-stretch lg:min-h-[500px] w-full lg:w-auto">
+              <div className="w-full border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                <FormPanel 
+                  className="h-full w-full"
+                  onPanChart={({ dateType, birthday, hour, gender, name ,horoscope,isAutoSend}) => {
+                    setDateType(dateType);
+                    setBirthday(birthday);
+                    setHour(hour);
+                    setGender(gender);
+                    setName(name);
+                    setHoroscope(horoscope);
+                    setIsAutoSend(isAutoSend)
+                  }} />
+              </div>
+            </div>
+          </div>
+
+          {/* 消息区域 */}
+          <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6">
             {messages.map((message, index) => (
               index === firstUserIndex ? null : (
                 <div
@@ -423,19 +418,19 @@ function ZiWeiContent() {
             )}
 
             <div ref={messagesEndRef} />
-          </>
+          </div>
         </div>
       </div>
 
       {/* 输入区域 - 在移动端侧边栏打开时隐藏 */}
       {!(isMobile && isSidebarOpen) && (
         <div 
-          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 lg:right-0 z-30 "
-           style={{ 
-             boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
-             boxSizing: 'border-box'
-           }}
-         >
+          className="bg-white border-t border-gray-200 p-4 lg:p-6 fixed bottom-0 left-0 right-0 lg:left-64 z-30"
+          style={{ 
+            boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
+            boxSizing: 'border-box'
+          }}
+        >
         <div className="max-w-6xl mx-auto px-4 lg:px-8">
           <div className="flex space-x-2 lg:space-x-4 items-end">
             <div className="flex-1 max-w-2xl">
@@ -465,8 +460,7 @@ function ZiWeiContent() {
         </div>
         </div>
       )}
-      </div>
-    </>
+    </div>
   );
 }
 
